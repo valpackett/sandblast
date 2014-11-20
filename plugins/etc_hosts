@@ -1,0 +1,14 @@
+#!/bin/sh
+
+: ${PREFIX=""}
+: ${SUFFIX=""}
+
+case $1 in
+	start)
+		echo "$SANDBLAST_IPV4		$PREFIX$SANDBLAST_HOSTNAME$SUFFIX" >> /etc/hosts
+		;;
+	stop)
+		exec sed -I bak -e "/^${SANDBLAST_IPV4}.*$/d" /etc/hosts
+		;;
+	*) echo "Invalid command $1" ;;
+esac

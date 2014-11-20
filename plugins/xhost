@@ -1,0 +1,17 @@
+#!/bin/sh
+
+: ${DISPLAY=":0"}
+: ${XAUTHORITY="/root/.Xauthority"}
+
+export DISPLAY
+export XAUTHORITY
+
+case $1 in
+	start)
+		exec xhost +$SANDBLAST_IPV4
+		;;
+	stop)
+		exec xhost -$SANDBLAST_IPV4
+		;;
+	*) echo "Invalid command $1" ;;
+esac
