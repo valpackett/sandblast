@@ -16,25 +16,35 @@ Sandblast is the missing simple container tool for FreeBSD.
 
 ## Usage
 
+First, you need a base jail, basically just a directory with a fresh FreeBSD installation, usually with ports and pkg ready to use.
+Something like this (zfs is not required, obviously)
+
+```shell
+$ sudo zfs create zroot/var/worlds/10.1-RELEASE
+$ sudo bsdinstall jail /var/worlds/10.1-RELEASE
+  # select: empty root password, no services, no users
+$ sudo sandblast ./examples/bootstrap.json
+```
+
 Sandblast reads the jail configuration from a JSON file like this one:
 
 ```javascript
 {
-	"ipv4": "127.0.0.2",
+	"ipv4": "192.168.1.99",
 	"hostname": "myjail",
 	"process": "#!/bin/sh\npkg install -y nginx",
 	"plugins": [
 		{
 			"name": "mount_dir",
 			"options": {
-				"source": "/usr/local/worlds/10.1-RELEASE",
+				"source": "/var/worlds/10.1-RELEASE",
 				"mode": "ro"
 			}
 		},
     {
       "name": "mount_dir",
       "options": {
-        "source": "/usr/local/containers/nginx",
+        "source": "/var/containers/nginx",
         "mode": "rw"
       }
     }
@@ -45,21 +55,21 @@ Sandblast reads the jail configuration from a JSON file like this one:
 When you run
 
 ```bash
-# sandblast this_file.json
+$ sudo sandblast this_file.json
 ```
 
 The following will happen:
 
-- `/usr/local/worlds/10.1-RELEASE` will be mounted using `nullfs` in `ro` mode at a temporary mountpoint (`/tmp/sandblast.*`)
-- `/usr/local/containers/nginx` will be mounted using `unionfs` in `rw` mode at the same mountpoint
-- a jail will be created, with that mountpoint as the filesystem root, `127.0.0.2` as the IPv4 address, hostname and jailname `myjail`
+- `/var/worlds/10.1-RELEASE` will be mounted using `nullfs` in `ro` mode at a temporary mountpoint (`/tmp/sandblast.*`)
+- `/var/containers/nginx` will be mounted using `unionfs` in `rw` mode at the same mountpoint
+- a jail will be created, with that mountpoint as the filesystem root, `192.168.1.99` as the IPv4 address, hostname and jailname `myjail`
 - the `sh` script that calls `pkg install -y nginx` will be saved to a temporary file
 - it will be executed inside the jail
 - the jail will be destroyed (just in case there are orphan processes left in the jail somehow)
-- `/usr/local/containers/nginx` will be unmounted from the root
-- `/usr/local/worlds/10.1-RELEASE` will be unmounted from the root
+- `/var/containers/nginx` will be unmounted from the root
+- `/var/worlds/10.1-RELEASE` will be unmounted from the root
 
-So, this run will create an nginx installation at `/usr/local/containers/nginx`, which then could be mounted in read-only mode in a jail that runs it...
+So, this run will create an nginx installation at `/var/containers/nginx`, which then could be mounted in read-only mode in a jail that runs it...
 
 ### Plugins
 

@@ -1,0 +1,48 @@
+{
+	"ipv4": "192.168.1.99",
+	"hostname": "firefox.jail",
+	"process": "#!/bin/sh\nrm /var/run/dbus/dbus.pid; service dbus onestart; su firefox -c 'DISPLAY=192.168.1.14:0 firefox -no-remote'",
+	"plugins": [
+		{
+			"name": "mount_dir",
+			"options": { "source": "/var/worlds/10.1-RELEASE", "mode": "ro" }
+		},
+		{
+			"name": "mount_dir",
+			"options": { "source": "/var/containers/firefox", "mode": "rw" }
+		},
+		{
+			"name": "mount_dir",
+			"options": { "source": "/usr/local/lib/X11/fonts", "destination": "/usr/local/lib/X11/fonts", "mode": "ro" }
+		},
+		{
+			"name": "mount_dir",
+			"options": { "source": "/usr/local/share/themes", "destination": "/usr/local/share/themes", "mode": "ro" }
+		},
+		{
+			"name": "mount_dir",
+			"options": { "source": "/home/dovahkiin/.config", "destination": "/home/firefox/.config", "mode": "ro" }
+		},
+		{
+			"name": "mount_dir",
+			"options": { "source": "/home/dovahkiin/Downloads", "destination": "/home/firefox/Downloads", "mode": "rw" }
+		},
+		{
+			"name": "mount_dir",
+			"options": { "source": "/home/dovahkiin/.mozilla", "destination": "/home/firefox/.mozilla", "mode": "rw" }
+		},
+		{
+			"name": "copy",
+			"options": { "source": "/home/dovahkiin/.gtkrc.mine", "destination": "/home/firefox/.gtkrc-2.0" }
+		},
+		"mount_dev",
+		{
+			"name": "netif_alias",
+			"options": { "iface": "vtnet0" }
+		},
+		{
+			"name": "xhost",
+			"options": { "xauthority": "/home/dovahkiin/.Xauthority" }
+		}
+	]
+}

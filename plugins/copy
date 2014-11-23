@@ -1,0 +1,11 @@
+#!/bin/sh
+
+case $1 in
+	start)
+		exec cp -f $SOURCE $SANDBLAST_PATH$DESTINATION
+		;;
+	stop)
+		exec rm -f $SANDBLAST_PATH$DESTINATION
+		;;
+	*) echo "Invalid command $1" ;;
+esac

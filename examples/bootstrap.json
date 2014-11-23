@@ -1,0 +1,16 @@
+{
+	"ipv4": "192.168.1.99",
+	"hostname": "base.jail",
+	"process": "#!/bin/sh\nportsnap fetch extract; make -C/usr/ports/ports-mgmt/pkg install clean; pkg; pw useradd -n nobody -d /nonexistent -s /usr/sbin/nologin",
+	"plugins": [
+		{
+			"name": "mount_dir",
+			"options": { "source": "/var/worlds/10.1-RELEASE", "mode": "rw" }
+		},
+		"mount_dev",
+		{
+			"name": "netif_alias",
+			"options": { "iface": "vtnet0" }
+		}
+	]
+}
