@@ -1,6 +1,6 @@
 // Sandblast -- the missing simple container tool for FreeBSD
 // Copyright (c) 2014 Greg V <greg@unrelenting.technology>
-// Licensed under the ISC license, see the COPYING file
+// Available under the ISC license, see the COPYING file
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -194,6 +194,7 @@ void read_file() {
 	if (!root || !json_is_object(root))
 		die("Incorrect JSON at %s @ %d:%d: %s", error.source, error.line, error.column, error.text);
 	str_copy_from_json(jail_hostname, root, "hostname");
+	str_copy_from_json(jail_jailname, root, "jailname");
 	str_copy_from_json(jail_ip, root, "ipv4");
 	str_copy_from_json(jail_process, root, "process");
 	json_t *plugins; arr_from_json(plugins, root, "plugins");

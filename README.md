@@ -49,13 +49,13 @@ Sandblast reads the jail configuration from a JSON file like this one:
 				"mode": "ro"
 			}
 		},
-    {
-      "name": "mount_dir",
-      "options": {
-        "source": "/var/containers/nginx",
-        "mode": "rw"
-      }
-    }
+		{
+			"name": "mount_dir",
+			"options": {
+				"source": "/var/containers/nginx",
+				"mode": "rw"
+			}
+		}
 	]
 }
 ```
@@ -125,4 +125,4 @@ But on a production server, `sudo` might be a better choice.
 ## Copyright
 
 Copyright (c) 2014 Greg V <greg@unrelenting.technology>
-Licensed under the ISC license, see the `COPYING` file
+Available under the ISC license, see the `COPYING` file
