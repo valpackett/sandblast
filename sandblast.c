@@ -145,6 +145,7 @@ void start_signal_handlers() {
 }
 
 void wait_for_child() {
+	setproctitle("[parent of jail %s (JID %d)]", jail_jailname, *jail_id);
 	int status; waitpid(child_pid, &status, 0);
 	info("Jailed process exited with status %d", status);
 }

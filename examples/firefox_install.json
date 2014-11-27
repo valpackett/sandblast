@@ -1,7 +1,7 @@
 {
 	"ipv4": "192.168.1.99",
 	"hostname": "firefox.jail",
-	"process": "#!/bin/sh\npkg install firefox gtk-engines2 gtk-murrine-engine; pw userdel firefox; pw useradd -n firefox -d /home/firefox -s /bin/sh; mkdir -p /home/firefox; chown firefox /home/firefox",
+	"process": "#!/bin/sh\npkg install firefox; pw userdel firefox; pw useradd -n firefox -d /home/firefox -s /bin/sh; mkdir -p /home/firefox; chown firefox /home/firefox",
 	"plugins": [
 		{
 			"name": "mount_dir",
