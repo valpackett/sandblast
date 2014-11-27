@@ -25,6 +25,10 @@
 		},
 		{
 			"name": "mount_dir",
+			"options": { "source": "/home/dovahkiin/.fonts", "destination": "/home/firefox/.fonts", "mode": "ro" }
+		},
+		{
+			"name": "mount_dir",
 			"options": { "source": "/home/dovahkiin/Downloads", "destination": "/home/firefox/Downloads", "mode": "rw" }
 		},
 		{
