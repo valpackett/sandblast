@@ -1,23 +1,31 @@
-# Sandblast [![ISC License](https://img.shields.io/badge/license-ISC-brightgreen.svg?style=flat)](https://tldrlegal.com/license/-isc-license)
+# Sandblast [![ISC License](https://img.shields.io/badge/license-ISC-red.svg?style=flat)](https://tldrlegal.com/license/-isc-license)
 
-Sandblast is the missing simple container tool for FreeBSD.
+Sandblast is the missing simple container tool for [FreeBSD].
 
 - **Minimalist containerization** -- conceptually similar to [Docker], but [doesn't try to do too much](http://suckless.org/philosophy)
 - **No [jail(8)], only [jail(2)]** -- made for ephemeral jails, avoids the infrastructure that was made for persistent jails, does not touch any config files
 - **Plugin system** -- most of the jail setup process is done by plugins which are simply shell scripts, you can easily customize anything
 
+[FreeBSD]: https://www.FreeBSD.org
 [Docker]: http://docker.io
-[jail(2)]: http://www.freebsd.org/cgi/man.cgi?query=jail&apropos=0&sektion=2&arch=default&format=html
-[jail(8)]: http://www.freebsd.org/cgi/man.cgi?query=jail&apropos=0&sektion=8&arch=default&format=html
+[jail(2)]: https://www.FreeBSD.org/cgi/man.cgi?query=jail&apropos=0&sektion=2&arch=default&format=html
+[jail(8)]: https://www.FreeBSD.org/cgi/man.cgi?query=jail&apropos=0&sektion=8&arch=default&format=html
 
 ## Dependencies
 
+- FreeBSD, obviously -- currently tested on 10.1
+- *For the `limit` plugin*: the kernel rebuilt with [RCTL](https://wiki.freebsd.org/Hierarchical_Resource_Limits) on
 - [Jansson](http://www.digip.org/jansson/) -- `pkg install jansson`
+
+## Installation
+
+It will be in the ports tree when it's ready.
+For now, `git clone`, `make` and `sudo make install`.
 
 ## Usage
 
-First, you need a base jail, basically just a directory with a fresh FreeBSD installation, usually with ports and pkg ready to use.
-Something like this (zfs is not required, obviously)
+First, you need a base jail, which is just a directory with a fresh FreeBSD installation, usually with ports and pkg ready to use.
+Something like this (ZFS is not required, obviously -- I just like it) sets it up:
 
 ```shell
 $ sudo zfs create zroot/var/worlds/10.1-RELEASE
@@ -65,9 +73,9 @@ The following will happen:
 - a jail will be created, with that mountpoint as the filesystem root, `192.168.1.99` as the IPv4 address, hostname and jailname `myjail`
 - the `sh` script that calls `pkg install -y nginx` will be saved to a temporary file
 - it will be executed inside the jail
-- the jail will be destroyed (just in case there are orphan processes left in the jail somehow)
-- `/var/containers/nginx` will be unmounted from the root
-- `/var/worlds/10.1-RELEASE` will be unmounted from the root
+- after it's done, the jail will be destroyed (just in case there are orphan processes left in the jail somehow)
+- `/var/containers/nginx` will be unmounted from the mountpoint
+- `/var/worlds/10.1-RELEASE` will be unmounted from the mountpoint
 
 So, this run will create an nginx installation at `/var/containers/nginx`, which then could be mounted in read-only mode in a jail that runs it...
 
@@ -76,7 +84,7 @@ So, this run will create an nginx installation at `/var/containers/nginx`, which
 You might have noticed that the JSON for mounting a directory is under the `plugins` array.
 Yes, that's right -- even mounting directories is a plugin.
 
-Plugins are executables that accept one command line argument (either `start` or `stop`) and the following environment variables:
+Plugins are executables (typically `/bin/sh` scripts) that accept one command line argument (either `start` or `stop`) and the following environment variables:
 
 - `SANDBLAST_PATH`
 - `SANDBLAST_IPV4`
@@ -87,3 +95,34 @@ Plugins are executables that accept one command line argument (either `start` or
 Options from the JSON file are passed as environment variables too (lowercase letters are converted to uppercase letters; everything other than letters is replaced with underscores.)
 
 They are executed in the same order as in the JSON file when starting, and in the reverse order when stopping.
+
+## Security
+
+*This code has not been audited yet!*
+You might want to wait some time before you start building your Heroku killer on top of it.
+Please do test it on your desktops though :-)
+
+### Trust
+
+- The jail configuration JSON files **are trusted**.
+  When building PaaS/CI/hosting/etc. services, you need to make sure *your software* generates valid configuration that doesn't eat your system.
+- The plugins **are trusted** (obviously).
+  Plugins are executed on the host system with root privileges, because they need to set up the sandbox (using things like `mount` and `ifconfig`.)
+- The `process` field of the JSON **is untrusted** -- it's executed inside of the jail.
+
+### setuid
+
+You *can* run sandblast as a non-root user if you set the setuid bit on the `sandblast` binary, like so:
+
+```shell
+$ sudo chmod 4755 /usr/local/bin/sandblast
+```
+
+**Think carefully** before you make any binaries setuid.
+This is probably fine on your local desktop system.
+But on a production server, `sudo` might be a better choice.
+
+## Copyright
+
+Copyright (c) 2014 Greg V <greg@unrelenting.technology>
+Licensed under the ISC license, see the `COPYING` file

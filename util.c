@@ -1,3 +1,7 @@
+// Sandblast -- the missing simple container tool for FreeBSD
+// Copyright (c) 2014 Greg V <greg@unrelenting.technology>
+// Licensed under the ISC license, see the COPYING file
+
 #ifndef _SANDBLAST_UTIL
 #define _SANDBLAST_UTIL
 
@@ -122,7 +126,6 @@ char *hostname_to_jailname(const char *original) {
 	result[len - 1] = '\0';
 	return result;
 }
-
 
 // str.replace('"', '\\"')
 char* copy_escape_quotes(const char *original) {

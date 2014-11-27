@@ -1,3 +1,7 @@
+// Sandblast -- the missing simple container tool for FreeBSD
+// Copyright (c) 2014 Greg V <greg@unrelenting.technology>
+// Licensed under the ISC license, see the COPYING file
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -16,6 +20,7 @@
 #include "util.c"
 
 #define TMP_TEMPLATE "/tmp/sandblast.XXXXXXXX"
+#define DEFAULT_PLUGIN_PATH "/usr/local/share/sandblast/plugins"
 
 // Process communication
 static sem_t *jail_started;
@@ -41,7 +46,7 @@ typedef struct {
 
 static plugin_t *jail_plugins;
 static size_t jail_plugins_count;
-static char *plugin_path;
+static char *plugin_path = DEFAULT_PLUGIN_PATH;
 static char *filename;
 
 static const char *progname;
@@ -70,8 +75,9 @@ void start_jail() {
 		die_errno("Could not chdir to jail");
 }
 
+// Make sure there are no orphans in the jail
 void stop_jail() {
-	jail_remove(*jail_id); // Make sure there are no orphans in the jail
+	jail_remove(*jail_id);
 }
 
 void start_process() {
@@ -109,12 +115,12 @@ void execute_plugin(const plugin_t *plugin, const char *arg) {
 		env[i++] = "LC_ALL=en_US.UTF-8";
 		env[i++] = "LANG=en_US.UTF-8";
 		env[i++] = 0;
-		if (execve(path, (char *[]){ path, arg, 0 }, env) == -1) {
+		if (execve(path, (char *[]){ path, arg, 0 }, env) == -1)
 			die("Could not execute plugin %s", path);
-		}
 	} else {
 		int status; waitpid(plugin_pid, &status, 0);
 		info("Plugin %s %s exited with status %d", path, arg, status);
+		free(path);
 	}
 }
 
@@ -177,8 +183,6 @@ void read_options(int argc, char *argv[]) {
 	argv += optind;
 	if (argc != 1)
 		usage();
-	if (plugin_path == NULL)
-		plugin_path = "/usr/local/share/sandblast/plugins";
 	filename = argv[0];
 	if (strncmp(filename, "-", 1) == 0)
 		filename = "/dev/stdin";
@@ -229,9 +233,16 @@ void start_logging() {
 	setlogmask(LOG_UPTO(LOG_INFO));
 }
 
+// Checks for root AND allows running as a setuid binary!
+void ensure_root() {
+	if (setuid(0) != 0)
+		die_errno("Could not get root privileges");
+}
+
 int main(int argc, char *argv[]) {
-	start_shared_memory();
 	start_logging();
+	ensure_root();
+	start_shared_memory();
 	read_options(argc, argv);
 	read_file();
 	child_pid = fork();
