@@ -1,7 +1,7 @@
 {
 	"ipv4": "192.168.1.99",
 	"hostname": "firefox.jail",
-	"process": "#!/bin/sh\nrm /var/run/dbus/dbus.pid; service dbus onestart; su firefox -c 'DISPLAY=192.168.1.14:0 firefox -no-remote'",
+	"process": "#!/bin/sh\nrm /var/run/dbus/dbus.pid; service dbus onestart; cat /etc/hosts; su firefox -c 'DISPLAY=parenthost:0 firefox -no-remote'",
 	"plugins": [
 		{
 			"name": "mount_dir",
@@ -43,6 +43,10 @@
 		{
 			"name": "xhost",
 			"options": { "xauthority": "/home/dovahkiin/.Xauthority" }
+		},
+		{
+			"name": "etc_hosts",
+			"options": { "iface": "vtnet0" }
 		}
 	]
 }

@@ -2,13 +2,18 @@
 
 : ${PREFIX=""}
 : ${SUFFIX=""}
+: ${IFACE="vtnet0"}
+
+PARENT_IPV4="`ifconfig "$IFACE" | grep 'inet ' | head -n 1 | cut -w -f3`"
 
 case $1 in
 	start)
 		echo "$SANDBLAST_IPV4		$PREFIX$SANDBLAST_HOSTNAME$SUFFIX" >> /etc/hosts
+		echo "$PARENT_IPV4		parenthost" >> $SANDBLAST_PATH/etc/hosts
 		;;
 	stop)
-		exec sed -I bak -e "/^${SANDBLAST_IPV4}.*$/d" /etc/hosts
+		sed -I bak -e "/^${SANDBLAST_IPV4}.*$/d" /etc/hosts
+		sed -I bak -e "/^${PARENT_IPV4}.*$/d" $SANDBLAST_PATH/etc/hosts
 		;;
 	*) echo "Invalid command $1" ;;
 esac
