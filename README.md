@@ -12,7 +12,7 @@ Sandblast is the missing simple container tool for FreeBSD.
 
 ## Dependencies
 
-- [Jansson](https://www.tldrlegal.com/l/-isc-license) -- `pkg install jansson`
+- [Jansson](http://www.digip.org/jansson/) -- `pkg install jansson`
 
 ## Usage
 
