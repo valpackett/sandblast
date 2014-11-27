@@ -16,6 +16,13 @@
 	if (!json_is_string(thing)) \
 		die("Incorrect JSON: %s must be a string", name); \
 
+#define str_copy_from_json_optional(target, parent, name) \
+	if (1) { \
+		json_t *result = json_object_get(parent, name); \
+		if (json_is_string(result)) \
+			target = copy_string(json_string_value(result)); \
+	}
+
 #define str_copy_from_json(target, parent, name) \
 	if (1) { \
 		json_t *result = json_object_get(parent, name); \
