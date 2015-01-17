@@ -3,29 +3,63 @@
 Sandblast is the missing simple container tool for [FreeBSD].
 
 - **Minimalist containerization** -- conceptually similar to [Docker], but [doesn't try to do too much](http://suckless.org/philosophy)
-- **No [jail(8)], only [jail(2)]** -- made for ephemeral jails, avoids the infrastructure that was made for persistent jails, does not touch any config files
+- **No [jail(8)], only [jail(3)]** -- made for ephemeral jails, avoids the infrastructure that was made for persistent jails, does not touch any config files
 - **Plugin system** -- most of the jail setup process is done by plugins which are simply shell scripts, you can easily customize anything
+- *Coming soon*: [App Container spec] support via an additional script that does the downloading, unpacking and simple JSON transformation
 
 [FreeBSD]: https://www.FreeBSD.org
 [Docker]: http://docker.io
 [jail(2)]: https://www.FreeBSD.org/cgi/man.cgi?query=jail&apropos=0&sektion=2&arch=default&format=html
 [jail(8)]: https://www.FreeBSD.org/cgi/man.cgi?query=jail&apropos=0&sektion=8&arch=default&format=html
+[App Container spec]: https://github.com/appc/spec/blob/master/SPEC.md
 
 ## Dependencies
 
 - FreeBSD, obviously -- currently tested on 10.1
-- *For the `limit` plugin*: the kernel rebuilt with [RCTL](https://wiki.freebsd.org/Hierarchical_Resource_Limits) on
+- *For the `limit` plugin*: the kernel rebuilt with [RCTL/RACCT](https://wiki.freebsd.org/Hierarchical_Resource_Limits)
+- *For vnet jails*: the kernel rebuild with VIMAGE (and IPFIREWALL/DUMMYNET for rate limiting -- pf's ALTQ crashes the system when starting vnet jails!)
 - [Jansson](http://www.digip.org/jansson/) -- `pkg install jansson`
+
+### Building a custom FreeBSD kernel
+
+You must have the FreeBSD source tree at /usr/src -- if you didn't choose it when installing, there are several ways to get it.
+One of them is cloning [freebsd/freebsd](https://github.com/freebsd/freebsd) from GitHub and checking out the appropriate branch (don't forget!).
+Once you have the source, you need a configuration file.
+
+Put the following in `/usr/src/sys/amd64/conf/SANDBLAST` (where `amd64` is your CPU architecture):
+
+```
+include GENERIC
+ident SANDBLAST
+
+options RCTL
+options RACCT
+
+options VIMAGE
+options IPFIREWALL
+options DUMMYNET
+options HZ=1000
+```
+
+See [Building and Installing a Custom Kernel](https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/kernelconfig-building.html) for further instructions.
+tl;dr:
+
+```shell
+$ cd /usr/src
+$ sudo make buildkernel KERNCONF=SANDBLAST
+$ sudo make installkernel KERNCONF=SANDBLAST
+$ sudo shutdown -r now
+```
 
 ## Installation
 
-It will be in the ports tree when it's ready.
+Sandblast will be in the ports tree when it's ready.
 For now, `git clone`, `make` and `sudo make install`.
 
 ## Usage
 
 First, you need a base jail, which is just a directory with a fresh FreeBSD installation, usually with ports and pkg ready to use.
-Something like this (ZFS is not required, obviously -- I just like it) sets it up:
+*Something like this* sets it up (ZFS is not required, obviously, and `examples/bootstrap.json` references `/var/worlds/10.1-RELEASE` and the `vtnet0` interface, so you probably want to customize it):
 
 ```shell
 $ sudo zfs create zroot/var/worlds/10.1-RELEASE

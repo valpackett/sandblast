@@ -1,0 +1,24 @@
+#!/bin/sh
+
+: ${IFACE="vtnet0"}
+: ${EPAIR_ID="$SANDBLAST_JID"}
+: ${BRIDGE_ID="$SANDBLAST_JID"}
+: ${IP_ID="$SANDBLAST_JID"}
+
+case $1 in
+	start)
+		ifconfig "epair$EPAIR_ID" create >/dev/null
+		ifconfig "bridge$BRIDGE_ID" create addm "epair${EPAIR_ID}a" addm $IFACE alias "10.${IP_ID}.0.1" up
+		ifconfig "epair${EPAIR_ID}a" up >/dev/null
+		ifconfig "epair${EPAIR_ID}b" vnet $SANDBLAST_JID
+		jexec $SANDBLAST_JID ifconfig lo0 127.0.0.1
+		jexec $SANDBLAST_JID ifconfig "epair${EPAIR_ID}b" "10.${IP_ID}.0.2" up
+		jexec $SANDBLAST_JID route add default "10.${IP_ID}.0.1"
+		cat /etc/resolv.conf > "$SANDBLAST_PATH/etc/resolv.conf"
+		;;
+	stop)
+		ifconfig "bridge$BRIDGE_ID" destroy
+		exec ifconfig "epair${EPAIR_ID}a" destroy
+		;;
+	*) echo "Invalid command $1" ;;
+esac

@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <signal.h>
 #include <unistd.h>
 #include <errno.h>
@@ -14,8 +15,9 @@
 #include <sys/param.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <sys/jail.h>
 #include <sys/wait.h>
+#include <sys/jail.h>
+#include <jail.h>
 #include <jansson.h>
 #include "util.c"
 
@@ -34,6 +36,7 @@ static const char *jail_ip;
 static const char *jail_hostname;
 static const char *jail_jailname;
 static const char *jail_process;
+static bool jail_vnet;
 static int *jail_id;
 static char *redir_stdout = "/dev/stdout";
 static char *redir_stderr = "/dev/stderr";
@@ -54,21 +57,21 @@ static const char *progname;
 ////////////////////////////////////////////////////////////////////////
 
 void start_jail() {
-	struct jail j;
-	j.version = JAIL_API_VERSION;
-	j.path = jail_path;
-	j.hostname = jail_hostname;
-	j.jailname = jail_jailname;
-	j.ip4s = j.ip6s = 0;
-	if (jail_ip != NULL) {
-		j.ip4s++;
-		j.ip4 = malloc(sizeof(struct in_addr) * j.ip4s);
-		j.ip4[0] = parse_ipv4(jail_ip);
-	}
 	freopen(redir_stdout, "w", stdout);
 	freopen(redir_stderr, "w", stderr);
-	*jail_id = jail(&j);
+	struct jailparam params[4];
+	jailparam_put(&params[0], "name", jail_jailname);
+	jailparam_put(&params[1], "path", jail_path);
+	if (jail_vnet) {
+		jailparam_put(&params[2], "vnet", NULL);
+		jailparam_put(&params[3], "host", NULL);
+	} else {
+		jailparam_put(&params[2], "host.hostname", jail_hostname);
+		jailparam_put(&params[3], "ip4.addr", jail_ip);
+	}
+	*jail_id = jailparam_set(params, 4, JAIL_CREATE | JAIL_ATTACH);
 	sem_post(jail_started);
+	printf("%s", jail_errmsg);
 	if (*jail_id == -1)
 		die_errno("Could not start jail");
 	if (chdir("/") != 0)
@@ -193,9 +196,10 @@ void read_file() {
 	json_t *root = json_load_file(filename, 0, &error);
 	if (!root || !json_is_object(root))
 		die("Incorrect JSON at %s @ %d:%d: %s", error.source, error.line, error.column, error.text);
+	boolean_from_json(jail_vnet, root, "vnet");
 	str_copy_from_json(jail_hostname, root, "hostname");
-	str_copy_from_json_optional(jail_jailname, root, "jailname");
 	str_copy_from_json(jail_ip, root, "ipv4");
+	str_copy_from_json_optional(jail_jailname, root, "jailname");
 	str_copy_from_json(jail_process, root, "process");
 	json_t *plugins; arr_from_json(plugins, root, "plugins");
 	jail_plugins_count = json_array_size(plugins);

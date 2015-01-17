@@ -6,6 +6,7 @@ CFLAGS += -Wall -Wextra -Wconversion -Wno-unused-parameter -Wno-incompatible-poi
 CFLAGS += -fstack-protector-all -fsanitize=bounds -ftrapv
 CFLAGS += -fPIC -fPIE
 CFLAGS += `pkgconf --cflags --libs jansson`
+CFLAGS += -I/usr/include -L/usr/lib -ljail
 LDFLAGS += -pie
 PREFIX ?= /usr/local
 

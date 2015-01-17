@@ -8,13 +8,23 @@
 #include <stdio.h>
 #include <syslog.h>
 #include <stdarg.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
+#include <stdbool.h>
 #include <jansson.h>
+#include <jail.h>
+
+#define jailparam_put(par, key, val) \
+	if (1) { \
+		jailparam_init((par), (key)); \
+		jailparam_import((par), (val)); \
+	}
 
 #define json_assert_string(thing, name) \
 	if (!json_is_string(thing)) \
 		die("Incorrect JSON: %s must be a string", name); \
+
+#define json_assert_boolean(thing, name) \
+	if (!json_is_boolean(thing)) \
+		die("Incorrect JSON: %s must be a bool", name); \
 
 #define str_copy_from_json_optional(target, parent, name) \
 	if (1) { \
@@ -28,6 +38,13 @@
 		json_t *result = json_object_get(parent, name); \
 		json_assert_string(result, name); \
 		target = copy_string(json_string_value(result)); \
+	}
+
+#define boolean_from_json(target, parent, name) \
+	if (1) { \
+		json_t *result = json_object_get(parent, name); \
+		json_assert_boolean(result, name); \
+		target = (bool)json_boolean_value(result); \
 	}
 
 #define json_assert_array(thing, name) \
@@ -92,13 +109,6 @@ int *init_shm_int() {
 		die_errno("Could not mmap");
 	*result = -1;
 	return result;
-}
-
-struct in_addr parse_ipv4(const char *ip_str) {
-	struct in_addr ip_struct;
-	if (inet_pton(AF_INET, ip_str, &ip_struct) <= 0)
-		die_errno("Cannot parse IPv4 address");
-	return ip_struct;
 }
 
 char *copy_string(const char *original) {
