@@ -36,7 +36,7 @@ static const char *jail_ip;
 static const char *jail_hostname;
 static const char *jail_jailname;
 static const char *jail_process;
-static bool jail_vnet;
+static bool jail_vnet = false;
 static int *jail_id;
 static char *redir_stdout = "/dev/stdout";
 static char *redir_stderr = "/dev/stderr";
@@ -196,7 +196,7 @@ void read_file() {
 	json_t *root = json_load_file(filename, 0, &error);
 	if (!root || !json_is_object(root))
 		die("Incorrect JSON at %s @ %d:%d: %s", error.source, error.line, error.column, error.text);
-	boolean_from_json(jail_vnet, root, "vnet");
+	boolean_from_json_optional(jail_vnet, root, "vnet");
 	str_copy_from_json(jail_hostname, root, "hostname");
 	str_copy_from_json(jail_ip, root, "ipv4");
 	str_copy_from_json_optional(jail_jailname, root, "jailname");

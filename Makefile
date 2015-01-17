@@ -16,7 +16,7 @@ install: all
 	install -s sandblast $(PREFIX)/bin
 	install sandblast.1 $(PREFIX)/man/man1/
 	mkdir -p $(PREFIX)/share/sandblast
-	cp -Rf plugins $(PREFIX)/share/sandblast/plugins
+	cp -Rf plugins $(PREFIX)/share/sandblast/
 
 clean:
 	rm -f sandblast sandblast.core

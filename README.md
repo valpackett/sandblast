@@ -9,7 +9,7 @@ Sandblast is the missing simple container tool for [FreeBSD].
 
 [FreeBSD]: https://www.FreeBSD.org
 [Docker]: http://docker.io
-[jail(3)]: https://www.FreeBSD.org/cgi/man.cgi?query=jail&apropos=0&sektion=3&arch=default&format=html
+[jail(3)]: https://www.FreeBSD.org/cgi/man.cgi?query=jail&apropos=0&sektion=3}&arch=default&format=html
 [jail(8)]: https://www.FreeBSD.org/cgi/man.cgi?query=jail&apropos=0&sektion=8&arch=default&format=html
 [App Container spec]: https://github.com/appc/spec/blob/master/SPEC.md
 

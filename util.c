@@ -29,8 +29,10 @@
 #define str_copy_from_json_optional(target, parent, name) \
 	if (1) { \
 		json_t *result = json_object_get(parent, name); \
-		if (json_is_string(result)) \
+		if (result != NULL) { \
+			json_assert_string(result, name); \
 			target = copy_string(json_string_value(result)); \
+		} \
 	}
 
 #define str_copy_from_json(target, parent, name) \
@@ -40,11 +42,13 @@
 		target = copy_string(json_string_value(result)); \
 	}
 
-#define boolean_from_json(target, parent, name) \
+#define boolean_from_json_optional(target, parent, name) \
 	if (1) { \
 		json_t *result = json_object_get(parent, name); \
-		json_assert_boolean(result, name); \
-		target = (bool)json_boolean_value(result); \
+		if (result != NULL) { \
+			json_assert_boolean(result, name); \
+			target = (bool)json_boolean_value(result); \
+		} \
 	}
 
 #define json_assert_array(thing, name) \
