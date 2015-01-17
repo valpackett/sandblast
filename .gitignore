@@ -1,3 +1,5 @@
 /sandblast
-/sandblast.core
+*.core
+*.1.gz
+*o
 /test.json

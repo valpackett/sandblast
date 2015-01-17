@@ -1,4 +1,4 @@
-CC ?= /usr/bin/cc
+PROG = sandblast
 CFLAGS ?= -Ofast
 CFLAGS += -std=c99
 #CFLAGS += -g -O0
@@ -8,20 +8,13 @@ CFLAGS += -fPIC -fPIE
 CFLAGS += `pkgconf --cflags --libs jansson`
 CFLAGS += -I/usr/include -L/usr/lib -ljail
 LDFLAGS += -pie
-PREFIX ?= /usr/local
+CLEANFILES += sandblast.core
+DESTDIR ?= /usr/local
+BINDIR ?= /bin
+SHAREDIR ?= /share
 
-all: sandblast
+beforeinstall:
+	mkdir -p ${DESTDIR}/share/sandblast
+	cp -Rf plugins ${DESTDIR}/share/sandblast/
 
-install: all
-	install -s sandblast $(PREFIX)/bin
-	install sandblast.1 $(PREFIX)/man/man1/
-	mkdir -p $(PREFIX)/share/sandblast
-	cp -Rf plugins $(PREFIX)/share/sandblast/
-
-clean:
-	rm -f sandblast sandblast.core
-
-sandblast: sandblast.c util.c
-	$(CC) $(CFLAGS) -o sandblast sandblast.c $(LDFLAGS)
-
-.PHONY: all install clean
+.include <bsd.prog.mk>
