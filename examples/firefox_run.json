@@ -1,7 +1,7 @@
 {
 	"ipv4": "192.168.1.99",
 	"hostname": "firefox.jail",
-	"process": "#!/bin/sh\nrm /var/run/dbus/dbus.pid; service dbus onestart; exec su firefox -c 'DISPLAY=parenthost:0 exec firefox -no-remote'",
+	"process": "#!/bin/sh\nrm /var/run/dbus/dbus.pid; service dbus onestart; sh; exec su firefox -c 'DISPLAY=parenthost:0 exec firefox -no-remote'",
 	"plugins": [
 		{
 			"name": "mount_dir",
@@ -17,23 +17,11 @@
 		},
 		{
 			"name": "mount_dir",
-			"options": { "source": "/usr/local/share/themes", "destination": "/usr/local/share/themes", "mode": "ro" }
-		},
-		{
-			"name": "mount_dir",
-			"options": { "source": "/home/dovahkiin/.config", "destination": "/home/firefox/.config", "mode": "ro" }
-		},
-		{
-			"name": "mount_dir",
 			"options": { "source": "/home/dovahkiin/.fonts", "destination": "/home/firefox/.fonts", "mode": "ro" }
 		},
 		{
-			"name": "mount_dir",
-			"options": { "source": "/home/dovahkiin/Downloads", "destination": "/home/firefox/Downloads", "mode": "rw" }
-		},
-		{
-			"name": "mount_dir",
-			"options": { "source": "/home/dovahkiin/.mozilla", "destination": "/home/firefox/.mozilla", "mode": "rw" }
+			"name": "copy",
+			"options": { "source": "/home/dovahkiin/.config/fontconfig/fonts.conf", "destination": "/home/firefox/.config/fontconfig/fonts.conf", "mode": "ro" }
 		},
 		{
 			"name": "copy",

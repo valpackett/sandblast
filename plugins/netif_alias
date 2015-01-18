@@ -2,12 +2,12 @@
 
 : ${IFACE="lo0"}
 
-case $1 in
+case "$1" in
 	start)
-		exec ifconfig $IFACE alias $SANDBLAST_IPV4
+		exec ifconfig "$IFACE" alias "$SANDBLAST_IPV4"
 		;;
 	stop)
-		exec ifconfig $IFACE -alias $SANDBLAST_IPV4
+		exec ifconfig "$IFACE" -alias "$SANDBLAST_IPV4"
 		;;
 	*) echo "Invalid command $1" ;;
 esac

@@ -1,11 +1,11 @@
 #!/bin/sh
 
-case $1 in
+case "$1" in
 	start)
-		exec $START
+		exec "$START"
 		;;
 	stop)
-		exec $STOP
+		exec "$STOP"
 		;;
 	*) echo "Invalid command $1" ;;
 esac

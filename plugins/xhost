@@ -6,12 +6,12 @@
 export DISPLAY
 export XAUTHORITY
 
-case $1 in
+case "$1" in
 	start)
-		exec xhost +$SANDBLAST_IPV4
+		exec xhost "+$SANDBLAST_IPV4" >/dev/null
 		;;
 	stop)
-		exec xhost -$SANDBLAST_IPV4
+		exec xhost "-$SANDBLAST_IPV4" >/dev/null
 		;;
 	*) echo "Invalid command $1" ;;
 esac

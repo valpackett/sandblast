@@ -1,7 +1,8 @@
 #!/bin/sh
 
-case $1 in
+case "$1" in
 	start)
+		mkdir -p "`dirname "$SANDBLAST_PATH$DESTINATION"`"
 		exec cp -f "$SOURCE" "$SANDBLAST_PATH$DESTINATION"
 		;;
 	stop)

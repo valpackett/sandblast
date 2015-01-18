@@ -1,11 +1,11 @@
 #!/bin/sh
 
-case $1 in
+case "$1" in
 	start)
-		exec mount -t devfs devfs $SANDBLAST_PATH/dev
+		exec mount -t devfs devfs "$SANDBLAST_PATH/dev"
 		;;
 	stop)
-		exec umount -f $SANDBLAST_PATH/dev
+		exec umount -f "$SANDBLAST_PATH/dev"
 		;;
 	*) echo "Invalid command $1" ;;
 esac
