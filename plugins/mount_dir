@@ -11,11 +11,7 @@ case "$1" in
 		if mount | grep "$TARGET " >/dev/null; then
 			exec mount_unionfs -o noatime -o copymode=transparent -o "$MODE" "$SOURCE" "$TARGET"
 		else
-			mount_nullfs -o "$MODE" "$SOURCE" "$TARGET"
-			echo ""
-			echo "--- After ${SOURCE} ---"
-			ls -la "${SANDBLAST_PATH}/usr/local/lib/X11/fonts"
-			echo ""
+			exec mount_nullfs -o "$MODE" "$SOURCE" "$TARGET"
 		fi
 		;;
 	stop)

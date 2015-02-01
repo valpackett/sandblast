@@ -1,7 +1,7 @@
 {
 	"ipv4": "192.168.1.99",
 	"hostname": "firefox.jail",
-	"process": "#!/bin/sh\nrm /var/run/dbus/dbus.pid; service dbus onestart; sh; exec su firefox -c 'DISPLAY=parenthost:0 exec firefox -no-remote'",
+	"process": "#!/bin/sh\nrm /var/run/dbus/dbus.pid; service dbus onestart; exec su firefox -c 'DISPLAY=parenthost:0 exec firefox -no-remote'",
 	"plugins": [
 		{
 			"name": "mount_dir",
