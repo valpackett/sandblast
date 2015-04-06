@@ -1,12 +1,16 @@
 #!/bin/sh
 
+DEV="$SANDBLAST_PATH/dev"
+: ${RULESET_ID="4"}
+
 case "$1" in
 	start)
-		mkdir -p "$SANDBLAST_PATH/dev"
-		exec mount -t devfs devfs "$SANDBLAST_PATH/dev"
+		mkdir -p "$DEV"
+		mount -t devfs devfs "$DEV"
+		exec devfs -m "$DEV" rule -s "$RULESET_ID" applyset
 		;;
 	stop)
-		exec umount -f "$SANDBLAST_PATH/dev"
+		exec umount -f "$DEV"
 		;;
 	*) echo "Invalid command $1" ;;
 esac
