@@ -5,7 +5,8 @@ Sandblast is the missing simple container tool for [FreeBSD].
 - **Minimalist containerization** -- conceptually similar to [Docker], but [doesn't try to do too much](http://suckless.org/philosophy)
 - **No [jail(8)], only [jail(3)]** -- made for ephemeral jails, avoids the infrastructure that was made for persistent jails, does not touch any config files
 - **Plugin system** -- most of the jail setup process is done by plugins which are simply shell scripts, you can easily customize anything
-- *Coming soon*: [App Container spec] support via an additional script that does the downloading, unpacking and simple JSON transformation
+
+It's a core building block suitable for any future container system, such as one that supports the [App Container spec].
 
 [FreeBSD]: https://www.FreeBSD.org
 [Docker]: http://docker.io
@@ -16,40 +17,10 @@ Sandblast is the missing simple container tool for [FreeBSD].
 ## Dependencies
 
 - FreeBSD, obviously -- currently tested on 10.1
-- *For the `limit` plugin*: the kernel rebuilt with [RCTL/RACCT](https://wiki.freebsd.org/Hierarchical_Resource_Limits)
-- *For vnet jails*: the kernel rebuild with VIMAGE (and IPFIREWALL/DUMMYNET for rate limiting -- pf's ALTQ crashes the system when starting vnet jails!)
+- *For CPU and memory limiting*: the kernel rebuilt with [RCTL/RACCT](https://wiki.freebsd.org/Hierarchical_Resource_Limits)
+- *For virtualized networking*: the kernel rebuilt with VIMAGE (and IPFIREWALL/DUMMYNET for traffic limiting -- pf's ALTQ crashes the system when starting vnet jails!)
+- (the best kernel configuration is mentioned later in the readme)
 - [Jansson](http://www.digip.org/jansson/) -- `pkg install jansson`
-
-### Building a custom FreeBSD kernel
-
-You must have the FreeBSD source tree at /usr/src -- if you didn't choose it when installing, there are several ways to get it.
-One of them is cloning [freebsd/freebsd](https://github.com/freebsd/freebsd) from GitHub and checking out the appropriate branch (don't forget!).
-Once you have the source, you need a configuration file.
-
-Put the following in `/usr/src/sys/amd64/conf/SANDBLAST` (where `amd64` is your CPU architecture):
-
-```
-include GENERIC
-ident SANDBLAST
-
-options RCTL
-options RACCT
-
-options VIMAGE
-options IPFIREWALL
-options DUMMYNET
-options HZ=1000
-```
-
-See [Building and Installing a Custom Kernel](https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/kernelconfig-building.html) for further instructions.
-tl;dr:
-
-```shell
-$ cd /usr/src
-$ sudo make buildkernel KERNCONF=SANDBLAST
-$ sudo make installkernel KERNCONF=SANDBLAST
-$ sudo shutdown -r now
-```
 
 ## Installation
 
@@ -115,8 +86,7 @@ So, this run will create an nginx installation at `/var/containers/nginx`, which
 
 ### Plugins
 
-You might have noticed that the JSON for mounting a directory is under the `plugins` array.
-Yes, that's right -- even mounting directories is a plugin.
+All system configuration for container jails is done using plugins.
 
 Plugins are executables (typically `/bin/sh` scripts) that accept one command line argument (either `start` or `stop`) and the following environment variables:
 
@@ -152,11 +122,40 @@ You *can* run sandblast as a non-root user if you set the setuid bit on the `san
 $ sudo chmod 4755 /usr/local/bin/sandblast
 ```
 
-**Think carefully** before you make any binaries setuid.
-This is probably fine on your local desktop system.
-But on a production server, `sudo` might be a better choice.
+Think carefully before you make any binaries setuid though.
+
+## Building a custom FreeBSD kernel
+
+You must have the FreeBSD source tree at /usr/src -- if you didn't choose it when installing, there are several ways to get it.
+One of them is cloning [freebsd/freebsd](https://github.com/freebsd/freebsd) from GitHub and checking out the appropriate branch (don't forget!).
+Once you have the source, you need a configuration file.
+
+Put the following in `/usr/src/sys/amd64/conf/SANDBLAST` (where `amd64` is your CPU architecture):
+
+```
+include GENERIC
+ident SANDBLAST
+
+options RCTL
+options RACCT
+
+options VIMAGE
+options IPFIREWALL
+options DUMMYNET
+options HZ=1000
+```
+
+See [Building and Installing a Custom Kernel](https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/kernelconfig-building.html) for further instructions.
+tl;dr:
+
+```shell
+$ cd /usr/src
+$ sudo make buildkernel KERNCONF=SANDBLAST
+$ sudo make installkernel KERNCONF=SANDBLAST
+$ sudo shutdown -r now
+```
 
 ## Copyright
 
-Copyright (c) 2014 Greg V <greg@unrelenting.technology>
+Copyright (c) 2014-2015 Greg V <greg@unrelenting.technology> 
 Available under the ISC license, see the `COPYING` file
