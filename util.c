@@ -12,11 +12,21 @@
 #include <jansson.h>
 #include <jail.h>
 
-#define jailparam_put(par, key, val) \
+#define sb_jailparam_start(count) \
+	struct jailparam params[count]; \
+	unsigned int params_cnt = 0;
+
+#define sb_jailparam_put(key, val) \
 	if (1) { \
-		jailparam_init((par), (key)); \
-		jailparam_import((par), (val)); \
+		if (jailparam_init(&params[params_cnt], (key)) != 0) \
+			die("Could not init jail param %s: %s", key, jail_errmsg); \
+		if (jailparam_import(&params[params_cnt], (val)) != 0) \
+			die("Could not import jail param %s: %s", key, jail_errmsg); \
+		params_cnt++; \
 	}
+
+#define sb_jailparam_set(flags) \
+	jailparam_set(params, params_cnt, (flags))
 
 #define json_assert_string(thing, name) \
 	if (!json_is_string(thing)) \

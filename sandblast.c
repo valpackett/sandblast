@@ -59,17 +59,17 @@ static const char *progname;
 void start_jail() {
 	freopen(redir_stdout, "w", stdout);
 	freopen(redir_stderr, "w", stderr);
-	struct jailparam params[4];
-	jailparam_put(&params[0], "name", jail_jailname);
-	jailparam_put(&params[1], "path", jail_path);
+	sb_jailparam_start(4);
+	sb_jailparam_put("name", jail_jailname);
+	sb_jailparam_put("path", jail_path);
 	if (jail_vnet) {
-		jailparam_put(&params[2], "vnet", NULL);
-		jailparam_put(&params[3], "host", NULL);
+		sb_jailparam_put("vnet", NULL);
+		sb_jailparam_put("host", NULL);
 	} else {
-		jailparam_put(&params[2], "host.hostname", jail_hostname);
-		jailparam_put(&params[3], "ip4.addr", jail_ip);
+		sb_jailparam_put("host.hostname", jail_hostname);
+		sb_jailparam_put("ip4.addr", jail_ip);
 	}
-	*jail_id = jailparam_set(params, 4, JAIL_CREATE | JAIL_ATTACH);
+	*jail_id = sb_jailparam_set(JAIL_CREATE | JAIL_ATTACH);
 	sem_post(jail_started);
 	printf("%s", jail_errmsg);
 	if (*jail_id == -1)
