@@ -18,7 +18,7 @@ It's a core building block suitable for any future container system, such as one
 
 - FreeBSD, obviously -- currently tested on 10.1
 - *For CPU and memory limiting*: the kernel rebuilt with [RCTL/RACCT](https://wiki.freebsd.org/Hierarchical_Resource_Limits)
-- *For virtualized networking*: the kernel rebuilt with VIMAGE (and IPFIREWALL/DUMMYNET for traffic limiting -- pf's ALTQ crashes the system when starting vnet jails!)
+- *For bandwidth limiting*: the kernel rebuilt with ALTQ
 - (the best kernel configuration is mentioned later in the readme)
 - [Jansson](http://www.digip.org/jansson/) -- `pkg install jansson`
 
@@ -138,11 +138,19 @@ ident SANDBLAST
 
 options RCTL
 options RACCT
-
 options VIMAGE
-options IPFIREWALL
-options DUMMYNET
-options HZ=1000
+options NULLFS
+options UNIONFS
+options TMPFS
+
+options ALTQ
+options ALTQ_RED
+options ALTQ_RIO
+options ALTQ_HFSC
+options ALTQ_PRIQ
+options ALTQ_NOPCC
+
+options SC_KERNEL_CONS_ATTR=(FG_GREEN|BG_BLACK)
 ```
 
 See [Building and Installing a Custom Kernel](https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/kernelconfig-building.html) for further instructions.
@@ -152,7 +160,7 @@ tl;dr:
 $ cd /usr/src
 $ sudo make buildkernel KERNCONF=SANDBLAST
 $ sudo make installkernel KERNCONF=SANDBLAST
-$ sudo shutdown -r now
+$ sudo reboot
 ```
 
 ## Copyright

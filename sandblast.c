@@ -36,7 +36,6 @@ static const char *jail_ip;
 static const char *jail_hostname;
 static const char *jail_jailname;
 static const char *jail_process;
-static bool jail_vnet = false;
 static int *jail_id;
 static char *redir_stdout = "/dev/stdout";
 static char *redir_stderr = "/dev/stderr";
@@ -62,13 +61,8 @@ void start_jail() {
 	sb_jailparam_start(4);
 	sb_jailparam_put("name", jail_jailname);
 	sb_jailparam_put("path", jail_path);
-	if (jail_vnet) {
-		sb_jailparam_put("vnet", NULL);
-		sb_jailparam_put("host", NULL);
-	} else {
-		sb_jailparam_put("host.hostname", jail_hostname);
-		sb_jailparam_put("ip4.addr", jail_ip);
-	}
+	sb_jailparam_put("ip4.addr", jail_ip);
+	sb_jailparam_put("host.hostname", jail_hostname);
 	*jail_id = sb_jailparam_set(JAIL_CREATE | JAIL_ATTACH);
 	sem_post(jail_started);
 	printf("%s", jail_errmsg);
@@ -196,7 +190,6 @@ void read_file() {
 	json_t *root = json_load_file(filename, 0, &error);
 	if (!root || !json_is_object(root))
 		die("Incorrect JSON at %s @ %d:%d: %s", error.source, error.line, error.column, error.text);
-	boolean_from_json_optional(jail_vnet, root, "vnet");
 	str_copy_from_json(jail_hostname, root, "hostname");
 	str_copy_from_json(jail_ip, root, "ipv4");
 	str_copy_from_json_optional(jail_jailname, root, "jailname");

@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# Note: this is for the VIMAGE/vnet stuff which is still experimental.
+# For me, it crashes the whole system.
+# So it's not currently supported in sandblast.
+
 : ${IFACE="vtnet0"}
 : ${EPAIR_ID="$SANDBLAST_JID"}
 : ${BRIDGE_ID="$SANDBLAST_JID"}
