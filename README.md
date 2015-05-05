@@ -165,5 +165,5 @@ $ sudo reboot
 
 ## Copyright
 
-Copyright (c) 2014-2015 Greg V <greg@unrelenting.technology> 
+Copyright (c) 2014-2015 Greg V <greg@unrelenting.technology>  
 Available under the ISC license, see the `COPYING` file

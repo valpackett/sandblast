@@ -1,5 +1,5 @@
 // Sandblast -- the missing simple container tool for FreeBSD
-// Copyright (c) 2014 Greg V <greg@unrelenting.technology>
+// Copyright (c) 2014-2015 Greg V <greg@unrelenting.technology>
 // Available under the ISC license, see the COPYING file
 
 #ifndef _SANDBLAST_UTIL
