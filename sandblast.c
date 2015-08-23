@@ -17,6 +17,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/jail.h>
+#include <sys/procdesc.h>
 #include <jail.h>
 #include <jansson.h>
 #include "util.c"
@@ -27,7 +28,7 @@
 // Process communication
 static sem_t *jail_started;
 static sem_t *started_plugins;
-static pid_t child_pid;
+static int child_pd;
 
 // Jail configuration and state -- fully known after jail_started fires
 // Accessed from the parent process; jail_id is set from the child
@@ -133,11 +134,11 @@ void stop_plugins() {
 }
 
 void handle_sigint() {
-	kill(child_pid, SIGTERM);
+	pdkill(child_pd, SIGTERM);
 }
 
 void handle_sigterm() {
-	kill(child_pid, SIGKILL);
+	pdkill(child_pd, SIGKILL);
 }
 
 void start_signal_handlers() {
@@ -149,6 +150,7 @@ void start_signal_handlers() {
 
 void wait_for_child() {
 	setproctitle("[parent of jail %s (JID %d)]", jail_jailname, *jail_id);
+	int child_pid; pdgetpid(child_pd, &child_pid);
 	int status; waitpid(child_pid, &status, 0);
 	info("Jailed process exited with status %d", status);
 }
@@ -243,7 +245,7 @@ int main(int argc, char *argv[]) {
 	start_shared_memory();
 	read_options(argc, argv);
 	read_file();
-	child_pid = fork();
+	pid_t child_pid = pdfork(&child_pd, 0);
 	if (child_pid == -1)
 		die_errno("Could not fork");
 	if (child_pid > 0) { // Parent
