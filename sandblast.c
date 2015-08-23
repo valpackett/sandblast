@@ -53,6 +53,7 @@ static char *plugin_path = DEFAULT_PLUGIN_PATH;
 static char *filename;
 
 static const char *progname;
+static bool verbose = false;
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -162,17 +163,18 @@ void start_shared_memory() {
 }
 
 void usage() {
-	die("Usage: %s [-p <plugins-path>] [-O <stdout>] [-E <stderr>] file.json", progname);
+	die("Usage: %s [-p <plugins-path>] [-O <stdout>] [-E <stderr>] [-v] file.json", progname);
 }
 
 void read_options(int argc, char *argv[]) {
 	progname = argv[0];
 	int c;
-	while ((c = getopt(argc, argv, "p:O:E:?h")) != -1) {
+	while ((c = getopt(argc, argv, "p:O:E:v?h")) != -1) {
 		switch (c) {
 			case 'p': plugin_path       = optarg; break;
 			case 'O': redir_stdout      = optarg; break;
 			case 'E': redir_stderr      = optarg; break;
+			case 'v': verbose           = true;   break;
 			case '?':
 			case 'h':
 			default:  usage(); break;
@@ -230,7 +232,7 @@ void read_file() {
 
 void start_logging() {
 	openlog(progname, LOG_PID | LOG_PERROR | LOG_CONS, LOG_USER);
-	setlogmask(LOG_UPTO(LOG_INFO));
+	setlogmask(LOG_UPTO(verbose ? LOG_INFO : LOG_WARNING));
 }
 
 // Checks for root AND allows running as a setuid binary!
@@ -240,10 +242,10 @@ void ensure_root() {
 }
 
 int main(int argc, char *argv[]) {
+	read_options(argc, argv);
 	start_logging();
 	ensure_root();
 	start_shared_memory();
-	read_options(argc, argv);
 	read_file();
 	pid_t child_pid = pdfork(&child_pd, 0);
 	if (child_pid == -1)

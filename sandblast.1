@@ -9,6 +9,7 @@
 .Op Fl p Ar plugins-path
 .Op Fl O Ar stdout
 .Op Fl E Ar stderr
+.Op Fl v
 .Ar config-file
 .Sh DESCRIPTION
 .Nm
@@ -25,6 +26,8 @@ By default, it's /usr/local/share/sandblast/plugins.
 The file to redirect the spawned process's stdout to.
 .It Fl E Ar stderr
 The file to redirect the spawned process's stderr to.
+.It Fl v
+Enable verbose logging
 .It Ar config-file
 The JSON file that describes the desired sandbox environment.
 .El
