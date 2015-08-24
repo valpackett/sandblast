@@ -163,7 +163,7 @@ void start_shared_memory() {
 }
 
 void usage() {
-	die("Usage: %s [-p <plugins-path>] [-O <stdout>] [-E <stderr>] [-v] file.json", progname);
+	die_nolog("Usage: %s [-p <plugins-path>] [-O <stdout>] [-E <stderr>] [-v] file.json\n", progname);
 }
 
 void read_options(int argc, char *argv[]) {
