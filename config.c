@@ -13,7 +13,11 @@
 #include "config.h"
 
 #define BUF_SIZE 65536
+#define IPV4_ADDRS_LEN 32
+#define IPV6_ADDRS_LEN 32
 
+static char *ipv4_addrs[IPV4_ADDRS_LEN];
+static char *ipv6_addrs[IPV6_ADDRS_LEN];
 static void *config_parser_arena;
 
 #define STR_TO_ARENA(dst, src) if (1) { \
@@ -49,9 +53,11 @@ void read_conf(jail_conf_t *jail_conf, uint8_t *inbuf, size_t len) {
 		die("Could not parse the config"); // TODO: output the error
 	ucl_object_t *root = ucl_parser_get_object(parser);
 
+	bzero(ipv4_addrs, IPV4_ADDRS_LEN*sizeof(char*));
+	bzero(ipv6_addrs, IPV6_ADDRS_LEN*sizeof(char*));
+
 	ucl_iterate(root, true, ^(ucl_object_t *cur) {
 		char *key = ucl_object_key(cur);
-		printf("Key %s\n", key);
 
 		if (strcmp(key, "hostname") == 0) {
 			STR_TO_ARENA(jail_conf->hostname, ucl_object_tostring_forced(cur));
@@ -60,24 +66,49 @@ void read_conf(jail_conf_t *jail_conf, uint8_t *inbuf, size_t len) {
 		} else if (strcmp(key, "script") == 0) {
 			STR_TO_ARENA(jail_conf->script, ucl_object_tostring_forced(cur));
 		} else if (strcmp(key, "ipv4") == 0) {
+			__block size_t i = 0;
 			ucl_iterate(cur, false, ^(ucl_object_t *val) {
-				if (strcmp(ucl_object_key(val), "ipv4") == 0) {
-					printf("Val %s\n", ucl_object_tostring_forced(val));
-				}
+				if (i > IPV4_ADDRS_LEN)
+					die("Too many IPv4 addresses in config");
+				ipv4_addrs[i++] = ucl_object_tostring_forced(val);
+			});
+		} else if (strcmp(key, "ipv6") == 0) {
+			__block size_t i = 0;
+			ucl_iterate(cur, false, ^(ucl_object_t *val) {
+				if (i > IPV6_ADDRS_LEN)
+					die("Too many IPv6 addresses in config");
+				ipv6_addrs[i++] = ucl_object_tostring_forced(val);
 			});
 		}
 
 	});
 
-	if (parser != NULL)
-		ucl_parser_free(parser);
-	if (root != NULL)
-		ucl_object_unref(root);
+	if (jail_conf->script == NULL)
+		die("You forgot to specify the `script` in config");
+
+	deduplicate_strings(ipv4_addrs, IPV4_ADDRS_LEN);
+	char *ip4joined = join_strings(ipv4_addrs, IPV4_ADDRS_LEN, ',');
+	if (strlen(ip4joined) > 0)
+		STR_TO_ARENA(jail_conf->ipv4, ip4joined);
+	free(ip4joined);
+
+	deduplicate_strings(ipv6_addrs, IPV6_ADDRS_LEN);
+	char *ip6joined = join_strings(ipv6_addrs, IPV6_ADDRS_LEN, ',');
+	if (strlen(ip6joined) > 0)
+		STR_TO_ARENA(jail_conf->ipv6, ip6joined);
+	free(ip6joined);
+
+	if (jail_conf->jailname == NULL && jail_conf->hostname != NULL)
+		jail_conf->jailname = hostname_to_jailname(jail_conf->hostname);
+
+	ucl_parser_free(parser);
+	ucl_object_unref(root);
 }
 
 jail_conf_t *parse_config(char *filename) {
 	config_parser_arena = init_shm_arena(640 * 1024); // Should be enough for anyone ;-)
-	jail_conf_t *jail_conf = arena_alloc(config_parser_arena, sizeof(jail_conf_t));
+	jail_conf_t *jail_conf = (jail_conf_t*)arena_alloc(config_parser_arena, sizeof(jail_conf_t));
+	jail_conf->mounts = (mount_t**)arena_alloc(config_parser_arena, MOUNTS_LEN*sizeof(mount_t*));
 	pid_t child_pid = fork();
 	if (child_pid == -1)
 		die_errno("Could not fork");
@@ -85,9 +116,6 @@ jail_conf_t *parse_config(char *filename) {
 		int status; waitpid(child_pid, &status, 0);
 		if (status != 0)
 			die("The parser process exited unsuccessfully");
-		printf("Got host %s\n", jail_conf->hostname);
-		if (jail_conf->jailname == NULL)
-			jail_conf->jailname = hostname_to_jailname(jail_conf->hostname);
 	} else { // Child
 		FILE *conf_file = fopen(filename, "r");
 		if (conf_file == NULL)

@@ -37,6 +37,7 @@ void *arena_alloc(const void *arena, size_t size) {
 	*arena_cur += size;
 	if (*arena_cur >= *arena_size)
 		die("Too much data");
+	bzero(arena + *arena_cur - size, size);
 	return arena + *arena_cur - size;
 }
 
@@ -45,4 +46,33 @@ char *copy_string(const char *original) {
 	char *result = malloc(len);
 	strlcpy(result, original, len);
 	return result;
+}
+
+char *join_strings(const char**srcs, size_t srcs_len, char sep) {
+	size_t len = 1;
+	for (size_t i = 0; i < srcs_len; i++)
+		if (srcs[i] != NULL)
+			len += strlen(srcs[i]) + 1;
+	char *result = (char*)malloc(len);
+	bzero(result, len);
+	size_t pos = 0;
+	for (size_t i = 0; i < srcs_len; i++) {
+		if (srcs[i] == NULL) continue;
+		pos = strlcat(result, srcs[i], len);
+		result[pos] = sep;
+	}
+	result[pos] = '\0';
+	return result;
+}
+
+// NOTE: Does not free because it's used with strings managed by libucl
+void deduplicate_strings(const char**strs, size_t strs_len) {
+	for (size_t i = 0; i < strs_len; i++) {
+		if (strs[i] == NULL) continue;
+		for (size_t j = 0; j < i; j++) {
+			if (strs[j] == NULL) continue;
+			if (strcmp(strs[i], strs[j]) == 0)
+				strs[j] = NULL;
+		}
+	}
 }

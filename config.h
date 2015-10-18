@@ -1,5 +1,7 @@
 #pragma once
 
+#define MOUNTS_LEN     64
+
 typedef struct {
 	char *from;
 	char *to;
@@ -8,8 +10,8 @@ typedef struct {
 typedef struct {
 	char *jailname;
 	char *hostname;
-	char **ipv4;
-	char **ipv6;
+	char *ipv4;
+	char *ipv6;
 	char *script;
 	uint32_t limit_cpu;
 	uint32_t limit_ram;

@@ -62,10 +62,11 @@ static bool verbose = false;
 void start_jail() {
 	freopen(redir_stdout, "w", stdout);
 	freopen(redir_stderr, "w", stderr);
-	sb_jailparam_start(4);
-	sb_jailparam_put("name", jail_conf->jailname);
+	sb_jailparam_start(5);
 	sb_jailparam_put("path", jail_path);
-	sb_jailparam_put("ip4.addr", "192.168.122.66");
+	sb_jailparam_put("name", jail_conf->jailname);
+	sb_jailparam_put("ip4.addr", jail_conf->ipv4);
+	sb_jailparam_put("ip6.addr", jail_conf->ipv6);
 	sb_jailparam_put("host.hostname", jail_conf->hostname);
 	*jail_id = sb_jailparam_set(JAIL_CREATE | JAIL_ATTACH);
 	sem_post(jail_started);
