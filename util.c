@@ -32,10 +32,6 @@
 	if (!json_is_string(thing)) \
 		die("Incorrect JSON: %s must be a string", name); \
 
-#define json_assert_boolean(thing, name) \
-	if (!json_is_boolean(thing)) \
-		die("Incorrect JSON: %s must be a bool", name); \
-
 #define str_copy_from_json_optional(target, parent, name) \
 	if (1) { \
 		json_t *result = json_object_get(parent, name); \
@@ -50,37 +46,6 @@
 		json_t *result = json_object_get(parent, name); \
 		json_assert_string(result, name); \
 		target = copy_string(json_string_value(result)); \
-	}
-
-#define boolean_from_json_optional(target, parent, name) \
-	if (1) { \
-		json_t *result = json_object_get(parent, name); \
-		if (result != NULL) { \
-			json_assert_boolean(result, name); \
-			target = (bool)json_boolean_value(result); \
-		} \
-	}
-
-#define json_assert_array(thing, name) \
-	if (!json_is_array(thing)) \
-		die("Incorrect JSON: %s must be an array", name); \
-
-#define arr_from_json(target, parent, name) \
-	if (1) { \
-		json_t *result = json_object_get(parent, name); \
-		json_assert_array(result, name); \
-		target = result; \
-	}
-
-#define json_assert_object(thing, name) \
-	if (!json_is_object(thing)) \
-		die("Incorrect JSON: %s must be an object", name); \
-
-#define obj_from_json(target, parent, name) \
-	if (1) { \
-		json_t *result = json_object_get(parent, name); \
-		json_assert_object(result, name) \
-		target = result; \
 	}
 
 char *r_asprintf(const char *fmt, ...) {

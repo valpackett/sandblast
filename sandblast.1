@@ -6,7 +6,6 @@
 .Nd the missing simple container tool for FreeBSD
 .Sh SYNOPSIS
 .Nm
-.Op Fl p Ar plugins-path
 .Op Fl O Ar stdout
 .Op Fl E Ar stderr
 .Op Fl v
@@ -19,9 +18,6 @@ in a FreeBSD jail.
 It runs applications in a lightweight, ephemeral way, without system-wide config files.
 .Sh OPTIONS
 .Bl -tag -width indent
-.It Fl p Ar plugins-path
-The path to a directory with plugins.
-By default, it's /usr/local/share/sandblast/plugins.
 .It Fl O Ar stdout
 The file to redirect the spawned process's stdout to.
 .It Fl E Ar stderr
@@ -35,33 +31,14 @@ The JSON file that describes the desired sandbox environment.
 .Bl -tag -width indent
 .It Em ipv4 No :: Sy string
 The IPv4 address for the jail.
-The netif_alias plugin from the default plugin bundle can set it up as a network interface alias automatically.
 .It Em hostname No :: Sy string
 The jail hostname.
-The etc_hosts plugin from the default plugin bundle can set it up as an /etc/hosts alias on the host machine.
-It also sets the host machine as `parenthost` in the /etc/hosts inside of the container.
 .It Em jailname No :: Sy string
 The jailname.
 Optional, will be based on the hostname (with some character replacements) by default.
 .It Em process No :: Sy string
 The source of the script that will be executed inside of the jail.
 Usually begins with #!/bin/sh -- but you can use any interpreter that's available inside of the jail.
-.It Em plugins No :: Sy array
-The plugins that should be executed to set up (and tear down) the jail.
-Each entry in the array can be either a string or an object.
-If it's a string, it's interpreted as a plugin name, with no options passed.
-If it's an object, it's expected to have the plugin name as the
-.Em name No :: Sy string
-property, and the options as the
-.Em options No :: Sy object
-property.
-The options are passed to the plugin as environment variables, converted to uppercase letters and filtered such that everything that's not a letter is replaced with an underscore.
-The plugins also receive
-.Sy start
-as the first command line argument when the jail is being set up, and
-.Sy stop
-when it's being torn down.
-Plugins are being executed in the order they're specified in the array when the jail is being set up, and it the reverse of that order when it's beign torn down.
 .El
 .Sh AUTHORS
 .An "Greg V" Aq greg@unrelenting.technology

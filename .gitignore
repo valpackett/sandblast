@@ -1,5 +1,5 @@
 /sandblast
 *.core
 *.1.gz
-*o
+*.o
 /testjsons
