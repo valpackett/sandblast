@@ -2,11 +2,7 @@
 
 Sandblast is the missing simple container tool for [FreeBSD].
 
-- **No [jail(8)], only [jail(3)]** -- made for ephemeral jails, avoids the infrastructure that was made for persistent jails, does not touch any config files
-
 [FreeBSD]: https://www.FreeBSD.org
-[jail(3)]: https://www.FreeBSD.org/cgi/man.cgi?query=jail&apropos=0&sektion=3}&arch=default&format=html
-[jail(8)]: https://www.FreeBSD.org/cgi/man.cgi?query=jail&apropos=0&sektion=8&arch=default&format=html
 
 ## Dependencies
 
@@ -14,23 +10,13 @@ Sandblast is the missing simple container tool for [FreeBSD].
 - *For CPU and memory limiting*: the kernel rebuilt with [RCTL/RACCT](https://wiki.freebsd.org/Hierarchical_Resource_Limits)
 - *For bandwidth limiting*: the kernel rebuilt with ALTQ
 - (the best kernel configuration is mentioned later in the readme)
+- libucl
 
 ## Installation
 
-Sandblast will be in the ports tree when it's ready.
 For now, `git clone`, `make` and `sudo make install`.
 
 ## Usage
-
-First, you need a base jail, which is just a directory with a fresh FreeBSD installation, usually with ports and pkg ready to use.
-*Something like this* sets it up (ZFS is not required, obviously, and `examples/bootstrap.json` references `/var/worlds/10.1-RELEASE` and the `vtnet0` interface, so you probably want to customize it):
-
-```shell
-$ sudo zfs create zroot/var/worlds/10.1-RELEASE
-$ sudo bsdinstall jail /var/worlds/10.1-RELEASE
-  # select: empty root password, no services, no users
-$ sudo sandblast ./examples/bootstrap.json
-```
 
 TODO
 
@@ -81,8 +67,6 @@ options ALTQ_RIO
 options ALTQ_HFSC
 options ALTQ_PRIQ
 options ALTQ_NOPCC
-
-options SC_KERNEL_CONS_ATTR=(FG_GREEN|BG_BLACK)
 ```
 
 See [Building and Installing a Custom Kernel](https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/kernelconfig-building.html) for further instructions.

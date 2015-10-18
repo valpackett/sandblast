@@ -9,39 +9,50 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
-#include <semaphore.h>
-#include <syslog.h>
 #include <sys/types.h>
-#include <sys/uio.h>
 #include <sys/param.h>
-#include <sys/mount.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/jail.h>
 #include <sys/procdesc.h>
 #include <jail.h>
-#include <jansson.h>
-#include "util.c"
+#include "memory.h"
+#include "logging.h"
+#include "config.h"
 
 #define TMP_TEMPLATE "/tmp/sandblast.XXXXXXXX"
 
-// Process communication
+#define sb_jailparam_start(count) \
+	struct jailparam params[count]; \
+	unsigned int params_cnt = 0;
+
+#define sb_jailparam_put(key, val) \
+	if (1) { \
+		if (jailparam_init(&params[params_cnt], (key)) != 0) \
+			die("Could not init jail param %s: %s", key, jail_errmsg); \
+		if (jailparam_import(&params[params_cnt], (val)) != 0) \
+			die("Could not import jail param %s: %s", key, jail_errmsg); \
+		params_cnt++; \
+	}
+
+#define sb_jailparam_set(flags) \
+	jailparam_set(params, params_cnt, (flags))
+
+
 static sem_t *jail_started;
 static int child_pd;
 
+static char *filename;
+
 // Jail configuration and state -- fully known after jail_started fires
 // Accessed from the parent process; jail_id is set from the child
+static jail_conf_t *jail_conf;
 static const char *jail_path;
-static const char *jail_ip;
-static const char *jail_hostname;
-static const char *jail_jailname;
-static const char *jail_process;
 static int *jail_id;
+
 static char *redir_stdout = "/dev/stdout";
 static char *redir_stderr = "/dev/stderr";
-
-static char *filename;
 
 static const char *progname;
 static bool verbose = false;
@@ -52,10 +63,10 @@ void start_jail() {
 	freopen(redir_stdout, "w", stdout);
 	freopen(redir_stderr, "w", stderr);
 	sb_jailparam_start(4);
-	sb_jailparam_put("name", jail_jailname);
+	sb_jailparam_put("name", jail_conf->jailname);
 	sb_jailparam_put("path", jail_path);
-	sb_jailparam_put("ip4.addr", jail_ip);
-	sb_jailparam_put("host.hostname", jail_hostname);
+	sb_jailparam_put("ip4.addr", "192.168.122.66");
+	sb_jailparam_put("host.hostname", jail_conf->hostname);
 	*jail_id = sb_jailparam_set(JAIL_CREATE | JAIL_ATTACH);
 	sem_post(jail_started);
 	printf("%s", jail_errmsg);
@@ -75,7 +86,7 @@ void start_process() {
 	int scriptfd = mkstemp(tmpname); // tmpname IS REPLACED WITH ACTUAL NAME in mkstemp
 	if (scriptfd == -1)
 		die_errno("Could not create the temp script file");
-	if (write(scriptfd, jail_process, strlen(jail_process)) == -1)
+	if (write(scriptfd, jail_conf->script, strlen(jail_conf->script)) == -1)
 		die_errno("Could not write to the temp script file");
 	if (fchmod(scriptfd, (uint16_t) strtol("0755", 0, 8)) != 0)
 		die_errno("Could not chmod the temp script file");
@@ -104,7 +115,7 @@ void start_signal_handlers() {
 }
 
 void wait_for_child() {
-	setproctitle("[parent of jail %s (JID %d)]", jail_jailname, *jail_id);
+	setproctitle("[parent of jail %s (JID %d)]", jail_conf->jailname, *jail_id);
 	int child_pid; pdgetpid(child_pd, &child_pid);
 	int status; waitpid(child_pid, &status, 0);
 	info("Jailed process exited with status %d", status);
@@ -116,7 +127,7 @@ void start_shared_memory() {
 }
 
 void usage() {
-	die_nolog("Usage: %s [-O <stdout>] [-E <stderr>] [-v] file.json\n", progname);
+	die_nolog("Usage: %s [-O <stdout>] [-E <stderr>] [-v] config_file\n", progname);
 }
 
 void read_options(int argc, char *argv[]) {
@@ -141,22 +152,6 @@ void read_options(int argc, char *argv[]) {
 		filename = "/dev/stdin";
 }
 
-void read_file() {
-	json_error_t error;
-	json_t *root = json_load_file(filename, 0, &error);
-	if (!root || !json_is_object(root))
-		die("Incorrect JSON at %s @ %d:%d: %s", error.source, error.line, error.column, error.text);
-	str_copy_from_json(jail_hostname, root, "hostname");
-	str_copy_from_json(jail_ip, root, "ipv4");
-	str_copy_from_json_optional(jail_jailname, root, "jailname");
-	str_copy_from_json(jail_process, root, "process");
-
-	jail_path = "/usr/jails/base/10.2-RELEASE"; // XXX: mkdtemp(copy_string(TMP_TEMPLATE));
-	if (jail_jailname == NULL)
-		jail_jailname = hostname_to_jailname(jail_hostname);
-	json_decref(root); // this is why everything is copied
-}
-
 void start_logging() {
 	openlog(progname, LOG_PID | LOG_PERROR | LOG_CONS, LOG_USER);
 	setlogmask(LOG_UPTO(verbose ? LOG_INFO : LOG_WARNING));
@@ -173,7 +168,8 @@ int main(int argc, char *argv[]) {
 	start_logging();
 	ensure_root();
 	start_shared_memory();
-	read_file();
+	jail_conf = parse_config(filename);
+	jail_path = "/usr/jails/base/10.2-RELEASE"; // XXX: mkdtemp(copy_string(TMP_TEMPLATE));
 	pid_t child_pid = pdfork(&child_pd, 0);
 	if (child_pid == -1)
 		die_errno("Could not fork");
