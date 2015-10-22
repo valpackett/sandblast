@@ -44,7 +44,8 @@ void *arena_alloc(const void *arena, size_t size) {
 char *copy_string(const char *original) {
 	size_t len = strlen(original) + 1;
 	char *result = malloc(len);
-	strlcpy(result, original, len);
+	if (strlcpy(result, original, len) >= len)
+		die("String copying error");
 	return result;
 }
 
@@ -59,6 +60,8 @@ char *join_strings(const char**srcs, size_t srcs_len, char sep) {
 	for (size_t i = 0; i < srcs_len; i++) {
 		if (srcs[i] == NULL) continue;
 		pos = strlcat(result, srcs[i], len);
+		if (pos >= len)
+			die("String join error");
 		result[pos] = sep;
 	}
 	result[pos] = '\0';

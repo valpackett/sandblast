@@ -14,4 +14,3 @@ void s_log_errno(const int priority, const char *fmt, ...);
 #define info(...) if (1) { s_log(LOG_INFO, __VA_ARGS__, NULL); }
 #define die(...) if (1) { s_log(LOG_ERR, __VA_ARGS__, NULL); exit(1); }
 #define die_errno(...) if (1) { s_log_errno(LOG_ERR, __VA_ARGS__, NULL); exit(errno); }
-#define die_nolog(...) if (1) { printf(__VA_ARGS__); exit(1); }

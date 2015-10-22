@@ -1,10 +1,14 @@
-// The configuration parser runs libucl in a forked process in capability mode (Capsicum.)
+// The configuration parser runs libucl in a forked process in a sandbox
+// (rlimit, Capsicum capability mode)
 // Because shared memory can't be passed from the forked process to the parent,
 // a large chunk of shared memory is allocated as an arena for the processes to share.
 
 #include <unistd.h>
 #include <stdbool.h>
 #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #include <sys/wait.h>
 #include <sys/capsicum.h>
 #include <ucl.h>
@@ -16,6 +20,8 @@
 #define IPV4_ADDRS_LEN 32
 #define IPV6_ADDRS_LEN 32
 
+static struct rlimit cpu_lim = { 2, 2 };
+
 static char *ipv4_addrs[IPV4_ADDRS_LEN];
 static char *ipv6_addrs[IPV6_ADDRS_LEN];
 static void *config_parser_arena;
@@ -23,7 +29,7 @@ static void *config_parser_arena;
 #define STR_TO_ARENA(dst, src) if (1) { \
 	size_t size = strlen((src)) + 1; \
 	dst = arena_alloc(config_parser_arena, size); \
-	strlcpy(dst, (src), size); }
+	if (strlcpy(dst, (src), size) >= size) die("Config string too long"); }
 
 typedef void (^ucl_callback)(ucl_object_t*);
 
@@ -117,11 +123,15 @@ jail_conf_t *parse_config(char *filename) {
 		if (status != 0)
 			die("The parser process exited unsuccessfully");
 	} else { // Child
+		if (seteuid(getuid()) != 0)
+			die_errno("Could not seteuid for the config parser");
 		FILE *conf_file = fopen(filename, "r");
 		if (conf_file == NULL)
 			die_errno("Could not read the config file");
-		if (cap_enter() < 0)
-			die_errno("Could not enter capability mode");
+		if (setrlimit(RLIMIT_CPU, &cpu_lim) != 0)
+			die_errno("Could not limit CPU for the config parser")
+		if (cap_enter() != 0)
+			die_errno("Could not enter capability mode for the config parser");
 		size_t r = 0;
 		uint8_t inbuf[BUF_SIZE];
 		while (!feof(conf_file) && r < sizeof(inbuf))

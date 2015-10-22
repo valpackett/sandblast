@@ -23,23 +23,6 @@
 
 #define TMP_TEMPLATE "/tmp/sandblast.XXXXXXXX"
 
-#define sb_jailparam_start(count) \
-	struct jailparam params[count]; \
-	unsigned int params_cnt = 0;
-
-#define sb_jailparam_put(key, val) \
-	if (1) { \
-		if (jailparam_init(&params[params_cnt], (key)) != 0) \
-			die("Could not init jail param %s: %s", key, jail_errmsg); \
-		if (jailparam_import(&params[params_cnt], (val)) != 0) \
-			die("Could not import jail param %s: %s", key, jail_errmsg); \
-		params_cnt++; \
-	}
-
-#define sb_jailparam_set(flags) \
-	jailparam_set(params, params_cnt, (flags))
-
-
 static sem_t *jail_started;
 static int child_pd;
 
@@ -59,16 +42,26 @@ static bool verbose = false;
 
 ////////////////////////////////////////////////////////////////////////
 
+#define sb_jailparam_put(key, val) \
+	if (1) { \
+		if (jailparam_init(&params[params_cnt], (key)) != 0) \
+			die("Could not init jail param %s: %s", key, jail_errmsg); \
+		if (jailparam_import(&params[params_cnt], (val)) != 0) \
+			die("Could not import jail param %s: %s", key, jail_errmsg); \
+		params_cnt++; \
+	}
+
 void start_jail() {
 	freopen(redir_stdout, "w", stdout);
 	freopen(redir_stderr, "w", stderr);
-	sb_jailparam_start(5);
+	struct jailparam params[5];
+	uint32_t params_cnt = 0;
 	sb_jailparam_put("path", jail_path);
 	sb_jailparam_put("name", jail_conf->jailname);
 	sb_jailparam_put("ip4.addr", jail_conf->ipv4);
 	sb_jailparam_put("ip6.addr", jail_conf->ipv6);
 	sb_jailparam_put("host.hostname", jail_conf->hostname);
-	*jail_id = sb_jailparam_set(JAIL_CREATE | JAIL_ATTACH);
+	*jail_id = jailparam_set(params, params_cnt, JAIL_CREATE | JAIL_ATTACH);
 	sem_post(jail_started);
 	printf("%s", jail_errmsg);
 	if (*jail_id == -1)
@@ -89,7 +82,7 @@ void start_process() {
 		die_errno("Could not create the temp script file");
 	if (write(scriptfd, jail_conf->script, strlen(jail_conf->script)) == -1)
 		die_errno("Could not write to the temp script file");
-	if (fchmod(scriptfd, (uint16_t) strtol("0755", 0, 8)) != 0)
+	if (fchmod(scriptfd, (uint16_t)strtol("0755", 0, 8)) != 0)
 		die_errno("Could not chmod the temp script file");
 	if (close(scriptfd) == -1)
 		die_errno("Could not close the temp script file");
@@ -116,7 +109,7 @@ void start_signal_handlers() {
 }
 
 void wait_for_child() {
-	setproctitle("[parent of jail %s (JID %d)]", jail_conf->jailname, *jail_id);
+	setproctitle("parent of jail `%s` (JID %d)", jail_conf->jailname, *jail_id);
 	int child_pid; pdgetpid(child_pd, &child_pid);
 	int status; waitpid(child_pid, &status, 0);
 	info("Jailed process exited with status %d", status);
@@ -128,7 +121,8 @@ void start_shared_memory() {
 }
 
 void usage() {
-	die_nolog("Usage: %s [-O <stdout>] [-E <stderr>] [-v] config_file\n", progname);
+	printf("Usage: %s [-O <stdout>] [-E <stderr>] [-v] config_file\n", progname);
+	exit(1);
 }
 
 void read_options(int argc, char *argv[]) {
@@ -158,7 +152,6 @@ void start_logging() {
 	setlogmask(LOG_UPTO(verbose ? LOG_INFO : LOG_WARNING));
 }
 
-// Checks for root AND allows running as a setuid binary!
 void ensure_root() {
 	if (setuid(0) != 0)
 		die_errno("Could not get root privileges");
@@ -167,10 +160,10 @@ void ensure_root() {
 int main(int argc, char *argv[]) {
 	read_options(argc, argv);
 	start_logging();
-	ensure_root();
 	start_shared_memory();
-	jail_conf = parse_config(filename);
 	jail_path = "/usr/jails/base/10.2-RELEASE"; // XXX: mkdtemp(copy_string(TMP_TEMPLATE));
+	jail_conf = parse_config(filename);
+	ensure_root();
 	pid_t child_pid = pdfork(&child_pd, 0);
 	if (child_pid == -1)
 		die_errno("Could not fork");
