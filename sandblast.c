@@ -17,9 +17,10 @@
 #include <sys/jail.h>
 #include <sys/procdesc.h>
 #include <jail.h>
-#include "memory.h"
-#include "logging.h"
+#include "admin.h"
 #include "config.h"
+#include "logging.h"
+#include "memory.h"
 
 #define TMP_TEMPLATE "/tmp/sandblast.XXXXXXXX"
 
@@ -62,19 +63,24 @@ void start_jail() {
 	sb_jailparam_put("ip6.addr", jail_conf->ipv6);
 	sb_jailparam_put("host.hostname", jail_conf->hostname);
 	*jail_id = jailparam_set(params, params_cnt, JAIL_CREATE | JAIL_ATTACH);
-	sem_post(jail_started);
 	printf("%s", jail_errmsg);
 	if (*jail_id == -1)
-		die_errno("Could not start jail");
+		die_errno("Could not create jail");
 	if (chdir("/") != 0)
 		die_errno("Could not chdir to jail");
+	sem_post(jail_started);
 }
 
-// Make sure there are no orphans in the jail
-void stop_jail() {
-	jail_remove(*jail_id);
+void add_limits() {
+	for (size_t i = 0; i < LIMITS_LEN; i++) {
+		if (jail_conf->limits[i] != NULL) {
+			char buf[64];
+			snprintf(buf, sizeof(buf), "jail:%d:%s", *jail_id, jail_conf->limits[i]);
+			rctl(RCTL_ADD, buf);
+		}
+	}
 }
- 
+
 void start_process() {
 	char *tmpname = copy_string(TMP_TEMPLATE);
 	int scriptfd = mkstemp(tmpname); // tmpname IS REPLACED WITH ACTUAL NAME in mkstemp
@@ -91,6 +97,17 @@ void start_process() {
 				            "LC_ALL=en_US.UTF-8",
 				            "LANG=en_US.UTF-8", 0 }) == -1)
 		die_errno("Could not spawn the jailed process");
+}
+
+void remove_limits() {
+	char buf[32];
+	snprintf(buf, sizeof(buf), "jail:%d", *jail_id);
+	rctl(RCTL_REMOVE, buf);
+}
+
+// Make sure there are no orphans in the jail
+void stop_jail() {
+	jail_remove(*jail_id);
 }
 
 void handle_sigint() {
@@ -161,23 +178,25 @@ int main(int argc, char *argv[]) {
 	read_options(argc, argv);
 	start_logging();
 	start_shared_memory();
-	jail_path = "/usr/jails/base/10.2-RELEASE"; // XXX: mkdtemp(copy_string(TMP_TEMPLATE));
-	jail_conf = parse_config(filename);
+	jail_path = "/"; // XXX: mkdtemp(copy_string(TMP_TEMPLATE));
+	jail_conf = load_conf(filename);
 	ensure_root();
 	pid_t child_pid = pdfork(&child_pd, 0);
 	if (child_pid == -1)
 		die_errno("Could not fork");
-	if (child_pid > 0) { // Parent
+	if (child_pid <= 0) { // Child
+		start_jail();
+		start_process();
+	} else { // Parent
 		sem_wait(jail_started);
+		add_limits();
 		start_signal_handlers();
 		if (*jail_id != -1) {
 			wait_for_child();
+			remove_limits();
 			stop_jail();
 		}
 		munmap(jail_id, sizeof(*jail_id));
-	} else { // Child
-		start_jail();
-		start_process();
 	}
 	return 0;
 }

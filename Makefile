@@ -13,6 +13,6 @@ CLEANFILES += sandblast.core
 DESTDIR ?= /usr/local
 BINDIR ?= /bin
 SHAREDIR ?= /share
-SRCS = sandblast.c config.c logging.c memory.c
+SRCS = sandblast.c config.c admin.c logging.c memory.c
 
 .include <bsd.prog.mk>

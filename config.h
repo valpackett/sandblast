@@ -1,6 +1,7 @@
 #pragma once
 
 #define MOUNTS_LEN     64
+#define LIMITS_LEN     32
 
 typedef struct {
 	char *from;
@@ -13,11 +14,8 @@ typedef struct {
 	char *ipv4;
 	char *ipv6;
 	char *script;
-	uint32_t limit_cpu;
-	uint32_t limit_ram;
-	uint32_t limit_swap;
-	uint32_t limit_openfiles;
-	mount_t **mounts;
+	char *limits[LIMITS_LEN];
+	mount_t *mounts[MOUNTS_LEN];
 } jail_conf_t;
 
-jail_conf_t *parse_config(char *filename);
+jail_conf_t *load_conf(char *filename);
