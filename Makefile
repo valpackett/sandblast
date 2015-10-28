@@ -1,6 +1,6 @@
 PROG = sandblast
-CFLAGS ?= -Ofast
-CFLAGS += -std=c99
+CFLAGS ?= -O2
+CFLAGS += -std=c11
 #CFLAGS += -g -O0
 CFLAGS += -Wall -Wextra -Wconversion -Wno-unused-parameter -Wno-incompatible-pointer-types-discards-qualifiers -Wstrict-overflow -Wformat-security -Wformat=2 -Wno-format-nonliteral
 CFLAGS += -fstack-protector-all -ftrapv
@@ -12,7 +12,6 @@ LDFLAGS += -pie
 CLEANFILES += sandblast.core
 DESTDIR ?= /usr/local
 BINDIR ?= /bin
-SHAREDIR ?= /share
 SRCS = sandblast.c config.c admin.c logging.c memory.c
 
 .include <bsd.prog.mk>

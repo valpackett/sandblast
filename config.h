@@ -1,7 +1,9 @@
 #pragma once
 
-#define MOUNTS_LEN     64
+#define IPV4_ADDRS_LEN 32
+#define IPV6_ADDRS_LEN 32
 #define LIMITS_LEN     32
+#define MOUNTS_LEN     64
 
 typedef struct {
 	char *from;
@@ -11,11 +13,11 @@ typedef struct {
 typedef struct {
 	char *jailname;
 	char *hostname;
-	char *ipv4;
-	char *ipv6;
 	char *script;
+	char *ipv4[IPV4_ADDRS_LEN];
+	char *ipv6[IPV6_ADDRS_LEN];
 	char *limits[LIMITS_LEN];
 	mount_t *mounts[MOUNTS_LEN];
 } jail_conf_t;
 
-jail_conf_t *load_conf(char *filename);
+jail_conf_t *load_conf(const char *filename);

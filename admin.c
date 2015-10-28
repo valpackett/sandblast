@@ -9,7 +9,6 @@ void rctl(const char *operation, const char *rule) {
 	if (child_pid == -1)
 		die_errno("Could not fork");
 	if (child_pid <= 0) { // Child
-		printf("rctl %s %s\n", operation, rule);
 		if (execve("/usr/bin/rctl", (char *[]){ "/usr/bin/rctl", operation, rule, 0 },
 				(char *[]){ "PATH=/usr/local/bin:/usr/local/sbin:/usr/games:/usr/bin:/usr/sbin:/bin:/sbin",
 				            "LC_ALL=en_US.UTF-8",

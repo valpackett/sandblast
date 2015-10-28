@@ -69,7 +69,7 @@ char *join_strings(const char**srcs, size_t srcs_len, char sep) {
 }
 
 // NOTE: Does not free because it's used with strings managed by libucl
-void deduplicate_strings(const char**strs, size_t strs_len) {
+void deduplicate_strings(const char **strs, size_t strs_len) {
 	for (size_t i = 0; i < strs_len; i++) {
 		if (strs[i] == NULL) continue;
 		for (size_t j = 0; j < i; j++) {
@@ -78,4 +78,9 @@ void deduplicate_strings(const char**strs, size_t strs_len) {
 				strs[j] = NULL;
 		}
 	}
+}
+
+char *ipaddr_string(const char **addrs, size_t addrs_len) {
+	deduplicate_strings(addrs, addrs_len);
+	return join_strings(addrs, addrs_len, ',');
 }

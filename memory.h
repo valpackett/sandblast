@@ -15,3 +15,5 @@ char *copy_string(const char *original);
 char *join_strings(const char**srcs, size_t srcs_len, char sep);
 
 void deduplicate_strings(const char**strs, size_t strs_len);
+
+char *ipaddr_string(const char **addrs, size_t addrs_len);

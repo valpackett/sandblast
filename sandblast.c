@@ -59,10 +59,14 @@ void start_jail() {
 	uint32_t params_cnt = 0;
 	sb_jailparam_put("path", jail_path);
 	sb_jailparam_put("name", jail_conf->jailname);
-	sb_jailparam_put("ip4.addr", jail_conf->ipv4);
-	sb_jailparam_put("ip6.addr", jail_conf->ipv6);
+	char *ipv4_string = ipaddr_string(jail_conf->ipv4, IPV4_ADDRS_LEN);
+	sb_jailparam_put("ip4.addr", ipv4_string);
+	char *ipv6_string = ipaddr_string(jail_conf->ipv6, IPV6_ADDRS_LEN);
+	sb_jailparam_put("ip6.addr", ipv6_string);
 	sb_jailparam_put("host.hostname", jail_conf->hostname);
 	*jail_id = jailparam_set(params, params_cnt, JAIL_CREATE | JAIL_ATTACH);
+	free(ipv4_string);
+	free(ipv6_string);
 	printf("%s", jail_errmsg);
 	if (*jail_id == -1)
 		die_errno("Could not create jail");

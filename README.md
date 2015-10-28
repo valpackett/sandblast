@@ -7,7 +7,7 @@ Sandblast is the missing simple container tool for [FreeBSD].
 ## Dependencies
 
 - FreeBSD, obviously -- currently tested on 10.2
-- `pkg install libucl`
+- `pkg install pkgconf libucl`
 - *For CPU and memory limiting*
   - *10.2 and newer*: add `kern.racct.enable=1` to `/boot/loader.conf` and reboot
   - *10.1 and older*: [rebuild the kernel](https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/kernelconfig-building.html) with [RCTL/RACCT](https://wiki.freebsd.org/Hierarchical_Resource_Limits) (and reboot, obviously)
