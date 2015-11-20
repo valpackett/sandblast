@@ -55,6 +55,7 @@ void parse_conf(jail_conf_t *jail_conf, uint8_t *buf, size_t len) {
 		die("Config: Could not parse"); // TODO: output the error
 	ucl_object_t *root = ucl_parser_get_object(parser);
 
+	jail_conf->securelevel = 3;
 	bzero(jail_conf->ipv4, sizeof(jail_conf->ipv4));
 	bzero(jail_conf->ipv6, sizeof(jail_conf->ipv6));
 	bzero(jail_conf->limits, sizeof(jail_conf->limits));
@@ -69,6 +70,11 @@ void parse_conf(jail_conf_t *jail_conf, uint8_t *buf, size_t len) {
 			STR_TO_ARENA(jail_conf->jailname, ucl_object_tostring_forced(cur));
 		} else if (strcmp(key, "script") == 0) {
 			STR_TO_ARENA(jail_conf->script, ucl_object_tostring_forced(cur));
+		} else if (strcmp(key, "securelevel") == 0) {
+			int64_t int_val = -1;
+			if (ucl_object_toint_safe(cur, &int_val) != true)
+				die("Config: Securelevel is not a number");
+			jail_conf->securelevel = (int8_t)int_val;
 		} else if (strcmp(key, "ipv4") == 0) {
 			__block size_t i = 0;
 			ucl_iterate(cur, false, ^(ucl_object_t *val) {
@@ -104,7 +110,6 @@ void parse_conf(jail_conf_t *jail_conf, uint8_t *buf, size_t len) {
 					die("Config: Resource name+value for '%s' is too long", res_key);
 				jail_conf->limits[i++] = lim_str;
 			});
-
 		}
 
 	});

@@ -32,6 +32,7 @@ static char *filename;
 // Jail configuration and state -- fully known after jail_started fires
 // Accessed from the parent process; jail_id is set from the child
 static jail_conf_t *jail_conf;
+static bool jail_has_limits = false;
 static const char *jail_path;
 static int *jail_id;
 
@@ -55,18 +56,28 @@ static bool verbose = false;
 void start_jail() {
 	freopen(redir_stdout, "w", stdout);
 	freopen(redir_stderr, "w", stderr);
-	struct jailparam params[5];
+	struct jailparam params[6];
 	uint32_t params_cnt = 0;
+
 	sb_jailparam_put("path", jail_path);
+
+	char *securelevel_string; asprintf(&securelevel_string, "%d", jail_conf->securelevel);
+	sb_jailparam_put("securelevel", securelevel_string);
+	free(securelevel_string);
+
 	sb_jailparam_put("name", jail_conf->jailname);
+
 	char *ipv4_string = ipaddr_string(jail_conf->ipv4, IPV4_ADDRS_LEN);
 	sb_jailparam_put("ip4.addr", ipv4_string);
+	free(ipv4_string);
+
 	char *ipv6_string = ipaddr_string(jail_conf->ipv6, IPV6_ADDRS_LEN);
 	sb_jailparam_put("ip6.addr", ipv6_string);
-	sb_jailparam_put("host.hostname", jail_conf->hostname);
-	*jail_id = jailparam_set(params, params_cnt, JAIL_CREATE | JAIL_ATTACH);
-	free(ipv4_string);
 	free(ipv6_string);
+
+	sb_jailparam_put("host.hostname", jail_conf->hostname);
+
+	*jail_id = jailparam_set(params, params_cnt, JAIL_CREATE | JAIL_ATTACH);
 	printf("%s", jail_errmsg);
 	if (*jail_id == -1)
 		die_errno("Could not create jail");
@@ -81,6 +92,7 @@ void add_limits() {
 			char buf[64];
 			snprintf(buf, sizeof(buf), "jail:%d:%s", *jail_id, jail_conf->limits[i]);
 			rctl(RCTL_ADD, buf);
+			jail_has_limits = true;
 		}
 	}
 }
@@ -104,6 +116,7 @@ void start_process() {
 }
 
 void remove_limits() {
+	if (jail_has_limits == false) return;
 	char buf[32];
 	snprintf(buf, sizeof(buf), "jail:%d", *jail_id);
 	rctl(RCTL_REMOVE, buf);

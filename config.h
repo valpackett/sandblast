@@ -18,6 +18,7 @@ typedef struct {
 	char *ipv6[IPV6_ADDRS_LEN];
 	char *limits[LIMITS_LEN];
 	mount_t *mounts[MOUNTS_LEN];
+	int8_t securelevel;
 } jail_conf_t;
 
 jail_conf_t *load_conf(const char *filename);
