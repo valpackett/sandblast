@@ -30,3 +30,11 @@ void rctl(const char *operation, const char *rule) {
 void mount_nullfs(const char *to, const char *from, bool readonly) {
 	run_process("/sbin/mount_nullfs", (char *[]){ "/sbin/mount_nullfs", "-o", (readonly ? "ro" : "rw"), from, to, 0 });
 }
+
+void mkdirp(const char *pathname) {
+	run_process("/bin/mkdir", (char *[]){ "/bin/mkdir", "-p", pathname, 0 });
+}
+
+void umount(const char *mountpoint) {
+	run_process("/sbin/umount", (char *[]){ "/sbin/umount", mountpoint, 0 });
+}

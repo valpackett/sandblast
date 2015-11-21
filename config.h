@@ -1,4 +1,6 @@
 #pragma once
+#include <unistd.h>
+#include <stdbool.h>
 
 #define IPV4_ADDRS_LEN 32
 #define IPV6_ADDRS_LEN 32
@@ -8,6 +10,7 @@
 typedef struct {
 	char *from;
 	char *to;
+	bool readonly;
 } mount_t;
 
 typedef struct {

@@ -22,7 +22,7 @@
 #include "logging.h"
 #include "memory.h"
 
-#define TMP_TEMPLATE "/tmp/sandblast.XXXXXXXX"
+#define TMP_TEMPLATE "/tmp/sandblast.XXXXXXXXXXXXXXXXXXX"
 
 static sem_t *jail_started;
 static sem_t *jail_prepared;
@@ -63,6 +63,7 @@ void start_jail() {
 	sb_jailparam_put("path", jail_path);
 
 	char *securelevel_string; asprintf(&securelevel_string, "%d", jail_conf->securelevel);
+
 	sb_jailparam_put("securelevel", securelevel_string);
 	free(securelevel_string);
 
@@ -98,6 +99,42 @@ void add_limits() {
 	}
 }
 
+void remove_limits() {
+	if (jail_has_limits == false) return;
+	char buf[64];
+	if (snprintf(buf, sizeof(buf), "jail:%d", *jail_id) >= 64)
+		die("Jail ID too long (when removing limits)");
+	rctl(RCTL_REMOVE, buf);
+}
+
+char* resolve_mountpoint(const char *pathname) {
+	char *result; asprintf(&result, "%s/%s", jail_path, pathname);
+	return result;
+}
+
+void mount_mounts() {
+	for (size_t i = 0; i < MOUNTS_LEN; i++) {
+		mount_t *mount = jail_conf->mounts[i];
+		if (mount != NULL) {
+			char *mountpoint = resolve_mountpoint(mount->to);
+			mkdirp(mountpoint);
+			mount_nullfs(mountpoint, mount->from, mount->readonly);
+			free(mountpoint);
+		}
+	}
+}
+
+void unmount_mounts() {
+	for (int32_t i = MOUNTS_LEN - 1; i >= 0; i--) {
+		mount_t *mount = jail_conf->mounts[i];
+		if (mount != NULL) {
+			char *mountpoint = resolve_mountpoint(mount->to);
+			umount(mountpoint);
+			free(mountpoint);
+		}
+	}
+}
+
 void start_process() {
 	char *tmpname = copy_string(TMP_TEMPLATE);
 	int scriptfd = mkstemp(tmpname); // tmpname IS REPLACED WITH ACTUAL NAME in mkstemp
@@ -114,14 +151,6 @@ void start_process() {
 				            "LC_ALL=en_US.UTF-8",
 				            "LANG=en_US.UTF-8", 0 }) == -1)
 		die_errno("Could not spawn the jailed process");
-}
-
-void remove_limits() {
-	if (jail_has_limits == false) return;
-	char buf[64];
-	if (snprintf(buf, sizeof(buf), "jail:%d", *jail_id) >= 64)
-		die("Jail ID too long (when removing limits)");
-	rctl(RCTL_REMOVE, buf);
 }
 
 // Make sure there are no orphans in the jail
@@ -204,7 +233,7 @@ int main(int argc, char *argv[]) {
 	read_options(argc, argv);
 	start_logging();
 	start_shared_memory();
-	jail_path = "/"; // XXX: mkdtemp(copy_string(TMP_TEMPLATE));
+	jail_path = mkdtemp(copy_string(TMP_TEMPLATE));
 	jail_conf = load_conf(filename);
 	ensure_root();
 	pid_t child_pid = pdfork(&child_pd, 0);
@@ -218,12 +247,15 @@ int main(int argc, char *argv[]) {
 	} else { // Parent
 		sem_wait(jail_started);
 		if (*jail_id != -1) {
-			add_limits();
 			start_signal_handlers();
+			mount_mounts();
+			add_limits();
 			sem_post(jail_prepared);
 			wait_for_child();
 			remove_limits();
+			unmount_mounts();
 			stop_jail();
+			rmdir(jail_path);
 		}
 		free_shared_memory();
 	}

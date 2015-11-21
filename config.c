@@ -3,8 +3,6 @@
 // Because shared memory can't be passed from the forked process to the parent,
 // a large chunk of shared memory is allocated as an arena for the processes to share.
 
-#include <unistd.h>
-#include <stdbool.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -113,8 +111,32 @@ void parse_conf(jail_conf_t *jail_conf, uint8_t *buf, size_t len) {
 					die("Config: Resource name+value for '%s' is too long", res_key);
 				jail_conf->limits[i++] = lim_str;
 			});
+		} else if (strcmp(key, "mount") == 0) {
+			__block size_t i = 0;
+			ucl_iterate(cur, true, ^(ucl_object_t *val) {
+				if (i > MOUNTS_LEN)
+					die("Config: Too many mounts");
+				mount_t *mount = arena_alloc(config_parser_arena, sizeof(mount_t));
+				mount->from = NULL;
+				mount->to = NULL;
+				mount->readonly = false;
+				ucl_iterate(val, true, ^(ucl_object_t *inner_val) {
+						char *inner_key = ucl_object_key(inner_val);
+						if (strcmp(inner_key, "from") == 0) {
+							STR_TO_ARENA(mount->from, ucl_object_tostring_forced(inner_val));
+						} else if (strcmp(inner_key, "to") == 0) {
+							STR_TO_ARENA(mount->to, ucl_object_tostring_forced(inner_val));
+						} else if (strcmp(inner_key, "readonly") == 0) {
+							mount->readonly = ucl_object_toboolean(inner_val);
+						}
+				});
+				if (mount->from == NULL)
+					die("Config: Mount with empty 'from' value");
+				if (mount->to == NULL)
+					die("Config: Mount with empty 'to' value");
+				jail_conf->mounts[i++] = mount;
+			});
 		}
-
 	});
 
 	if (jail_conf->script == NULL)

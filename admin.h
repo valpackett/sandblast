@@ -5,3 +5,5 @@
 
 void rctl(const char *operation, const char *rule);
 void mount_nullfs(const char *to, const char *from, bool readonly);
+void mkdirp(const char *pathname);
+void umount(const char *mountpoint);
