@@ -41,7 +41,7 @@ void ucl_iterate(ucl_object_t *obj, bool expand, ucl_callback cb) {
 // The jailname can't contain periods, unlike hostname, which often should
 char *hostname_to_jailname(const char *str) {
 	size_t len = strlen(str) + 1;
-	char *result = malloc(len);
+	char *result = arena_alloc(config_parser_arena, len);
 	for (size_t i = 0; i < len; i++)
 		result[i] = (str[i] == '.') ? '_' : str[i];
 	result[len - 1] = '\0';
@@ -55,6 +55,9 @@ void parse_conf(jail_conf_t *jail_conf, uint8_t *buf, size_t len) {
 		die("Config: Could not parse"); // TODO: output the error
 	ucl_object_t *root = ucl_parser_get_object(parser);
 
+	jail_conf->hostname = NULL;
+	jail_conf->jailname = NULL;
+	jail_conf->script = NULL;
 	jail_conf->securelevel = 3;
 	bzero(jail_conf->ipv4, sizeof(jail_conf->ipv4));
 	bzero(jail_conf->ipv6, sizeof(jail_conf->ipv6));

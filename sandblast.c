@@ -25,6 +25,7 @@
 #define TMP_TEMPLATE "/tmp/sandblast.XXXXXXXX"
 
 static sem_t *jail_started;
+static sem_t *jail_prepared;
 static int child_pd;
 
 static char *filename;
@@ -47,9 +48,9 @@ static bool verbose = false;
 #define sb_jailparam_put(key, val) \
 	if (1) { \
 		if (jailparam_init(&params[params_cnt], (key)) != 0) \
-			die("Could not init jail param %s: %s", key, jail_errmsg); \
+			die("Could not init jail param %s: %s", (key), jail_errmsg); \
 		if (jailparam_import(&params[params_cnt], (val)) != 0) \
-			die("Could not import jail param %s: %s", key, jail_errmsg); \
+			die("Could not import jail param %s: %s", (key), jail_errmsg); \
 		params_cnt++; \
 	}
 
@@ -83,14 +84,14 @@ void start_jail() {
 		die_errno("Could not create jail");
 	if (chdir("/") != 0)
 		die_errno("Could not chdir to jail");
-	sem_post(jail_started);
 }
 
 void add_limits() {
 	for (size_t i = 0; i < LIMITS_LEN; i++) {
 		if (jail_conf->limits[i] != NULL) {
-			char buf[64];
-			snprintf(buf, sizeof(buf), "jail:%d:%s", *jail_id, jail_conf->limits[i]);
+			char buf[128];
+			if (snprintf(buf, sizeof(buf), "jail:%d:%s", *jail_id, jail_conf->limits[i]) >= 128)
+				die("Jail ID + limit too long (when adding limits)");
 			rctl(RCTL_ADD, buf);
 			jail_has_limits = true;
 		}
@@ -117,8 +118,9 @@ void start_process() {
 
 void remove_limits() {
 	if (jail_has_limits == false) return;
-	char buf[32];
-	snprintf(buf, sizeof(buf), "jail:%d", *jail_id);
+	char buf[64];
+	if (snprintf(buf, sizeof(buf), "jail:%d", *jail_id) >= 64)
+		die("Jail ID too long (when removing limits)");
 	rctl(RCTL_REMOVE, buf);
 }
 
@@ -152,6 +154,13 @@ void wait_for_child() {
 void start_shared_memory() {
 	jail_id = init_shm_int();
 	jail_started = init_shm_semaphore();
+	jail_prepared = init_shm_semaphore();
+}
+
+void free_shared_memory() {
+	munmap(jail_id, sizeof(*jail_id));
+	munmap(jail_started, sizeof(*jail_started));
+	munmap(jail_prepared, sizeof(*jail_prepared));
 }
 
 void usage() {
@@ -203,17 +212,20 @@ int main(int argc, char *argv[]) {
 		die_errno("Could not fork");
 	if (child_pid <= 0) { // Child
 		start_jail();
+		sem_post(jail_started);
+		sem_wait(jail_prepared);
 		start_process();
 	} else { // Parent
 		sem_wait(jail_started);
-		add_limits();
-		start_signal_handlers();
 		if (*jail_id != -1) {
+			add_limits();
+			start_signal_handlers();
+			sem_post(jail_prepared);
 			wait_for_child();
 			remove_limits();
 			stop_jail();
 		}
-		munmap(jail_id, sizeof(*jail_id));
+		free_shared_memory();
 	}
 	return 0;
 }
