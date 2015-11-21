@@ -107,6 +107,26 @@ void remove_limits() {
 	rctl(RCTL_REMOVE, buf);
 }
 
+void alias_ipaddrs() {
+	if (jail_conf->net_iface == NULL) return;
+	for (size_t i = 0; i < IPV4_ADDRS_LEN; i++)
+		if (jail_conf->ipv4[i] != NULL)
+			ifconfig_alias(jail_conf->net_iface, "inet", jail_conf->ipv4[i]);
+	for (size_t i = 0; i < IPV6_ADDRS_LEN; i++)
+		if (jail_conf->ipv6[i] != NULL)
+			ifconfig_alias(jail_conf->net_iface, "inet6", jail_conf->ipv6[i]);
+}
+
+void unalias_ipaddrs() {
+	if (jail_conf->net_iface == NULL) return;
+	for (size_t i = 0; i < IPV4_ADDRS_LEN; i++)
+		if (jail_conf->ipv4[i] != NULL)
+			ifconfig_unalias(jail_conf->net_iface, "inet", jail_conf->ipv4[i]);
+	for (size_t i = 0; i < IPV6_ADDRS_LEN; i++)
+		if (jail_conf->ipv6[i] != NULL)
+			ifconfig_unalias(jail_conf->net_iface, "inet6", jail_conf->ipv6[i]);
+}
+
 char* resolve_mountpoint(const char *pathname) {
 	char *result; asprintf(&result, "%s/%s", jail_path, pathname);
 	return result;
@@ -249,10 +269,12 @@ int main(int argc, char *argv[]) {
 		if (*jail_id != -1) {
 			start_signal_handlers();
 			mount_mounts();
+			alias_ipaddrs();
 			add_limits();
 			sem_post(jail_prepared);
 			wait_for_child();
 			remove_limits();
+			unalias_ipaddrs();
 			unmount_mounts();
 			stop_jail();
 			rmdir(jail_path);

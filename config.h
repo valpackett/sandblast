@@ -17,6 +17,7 @@ typedef struct {
 	char *jailname;
 	char *hostname;
 	char *script;
+	char *net_iface;
 	char *ipv4[IPV4_ADDRS_LEN];
 	char *ipv6[IPV6_ADDRS_LEN];
 	char *limits[LIMITS_LEN];

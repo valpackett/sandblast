@@ -38,3 +38,11 @@ void mkdirp(const char *pathname) {
 void umount(const char *mountpoint) {
 	run_process("/sbin/umount", (char *[]){ "/sbin/umount", mountpoint, 0 });
 }
+
+void ifconfig_alias(const char *interface, const char *net, const char *address) {
+	run_process("/sbin/ifconfig", (char *[]){ "/sbin/ifconfig", interface, net, address, "alias", 0 });
+}
+
+void ifconfig_unalias(const char *interface, const char *net, const char *address) {
+	run_process("/sbin/ifconfig", (char *[]){ "/sbin/ifconfig", interface, net, address, "-alias", 0 });
+}

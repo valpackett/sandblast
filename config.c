@@ -55,6 +55,7 @@ void parse_conf(jail_conf_t *jail_conf, uint8_t *buf, size_t len) {
 
 	jail_conf->hostname = NULL;
 	jail_conf->jailname = NULL;
+	jail_conf->net_iface = NULL;
 	jail_conf->script = NULL;
 	jail_conf->securelevel = 3;
 	bzero(jail_conf->ipv4, sizeof(jail_conf->ipv4));
@@ -71,6 +72,8 @@ void parse_conf(jail_conf_t *jail_conf, uint8_t *buf, size_t len) {
 			STR_TO_ARENA(jail_conf->jailname, ucl_object_tostring_forced(cur));
 		} else if (strcmp(key, "script") == 0) {
 			STR_TO_ARENA(jail_conf->script, ucl_object_tostring_forced(cur));
+		} else if (strcmp(key, "net_iface") == 0) {
+			STR_TO_ARENA(jail_conf->net_iface, ucl_object_tostring_forced(cur));
 		} else if (strcmp(key, "securelevel") == 0) {
 			int64_t int_val = -1;
 			if (ucl_object_toint_safe(cur, &int_val) != true)
