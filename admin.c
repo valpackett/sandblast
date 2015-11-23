@@ -47,11 +47,15 @@ void mount_devfs(const char *to, int16_t devfs_ruleset, void (*on_fail)()) {
 }
 
 void mount_nullfs(const char *to, const char *from, bool readonly, void (*on_fail)()) {
-	run_process("/sbin/mount_nullfs", (char *[]){ "/sbin/mount_nullfs", "-o", (readonly ? "ro" : "rw"), from, to, 0 }, true, on_fail);
+	run_process("/sbin/mount_nullfs", (char *[]){ "/sbin/mount_nullfs", "-o", "noatime", "-o", (readonly ? "ro" : "rw"), from, to, 0 }, true, on_fail);
+}
+
+void mount_unionfs(const char *to, const char *from, bool readonly, void (*on_fail)()) {
+	run_process("/sbin/mount_unionfs", (char *[]){ "/sbin/mount_unionfs", "-o", "noatime", "-o", (readonly ? "ro" : "rw"), from, to, 0 }, true, on_fail);
 }
 
 void mkdirp(const char *pathname) {
-	run_process("/bin/mkdir", (char *[]){ "/bin/mkdir", "-p", pathname, 0 }, true, do_nothing);
+	run_process("/bin/mkdir", (char *[]){ "/bin/mkdir", "-p", pathname, 0 }, false, do_nothing);
 }
 
 void umount(const char *mountpoint) {

@@ -141,9 +141,18 @@ void mount_mounts() {
 	for (size_t i = 0; i < MOUNTS_LEN; i++) {
 		mount_t *mount = jail_conf->mounts[i];
 		if (mount != NULL) {
+			bool is_union = false;
+			for (size_t j = 0; j < i; j++) {
+				mount_t *mount_2 = jail_conf->mounts[j];
+				if (mount_2 != NULL && strcmp(mount->to, mount_2->to) == 0)
+					is_union = true;
+			}
 			char *mountpoint = resolve_mountpoint(mount->to);
 			mkdirp(mountpoint);
-			mount_nullfs(mountpoint, mount->from, mount->readonly, on_failed_mount);
+			if (is_union)
+				mount_unionfs(mountpoint, mount->from, mount->readonly, on_failed_mount);
+			else
+				mount_nullfs(mountpoint, mount->from, mount->readonly, on_failed_mount);
 			free(mountpoint);
 		}
 	}
