@@ -23,6 +23,7 @@ typedef struct {
 	char *limits[LIMITS_LEN];
 	mount_t *mounts[MOUNTS_LEN];
 	int8_t securelevel;
+	int16_t devfs_ruleset;
 } jail_conf_t;
 
 jail_conf_t *load_conf(const char *filename);

@@ -58,6 +58,7 @@ void parse_conf(jail_conf_t *jail_conf, uint8_t *buf, size_t len) {
 	jail_conf->net_iface = NULL;
 	jail_conf->script = NULL;
 	jail_conf->securelevel = 3;
+	jail_conf->devfs_ruleset = 4;
 	bzero(jail_conf->ipv4, sizeof(jail_conf->ipv4));
 	bzero(jail_conf->ipv6, sizeof(jail_conf->ipv6));
 	bzero(jail_conf->limits, sizeof(jail_conf->limits));
@@ -77,8 +78,13 @@ void parse_conf(jail_conf_t *jail_conf, uint8_t *buf, size_t len) {
 		} else if (strcmp(key, "securelevel") == 0) {
 			int64_t int_val = -1;
 			if (ucl_object_toint_safe(cur, &int_val) != true)
-				die("Config: Securelevel is not a number");
+				die("Config: securelevel is not a number");
 			jail_conf->securelevel = (int8_t)int_val;
+		} else if (strcmp(key, "devfs_ruleset") == 0) {
+			int64_t int_val = -1;
+			if (ucl_object_toint_safe(cur, &int_val) != true)
+				die("Config: devfs_ruleset is not a number");
+			jail_conf->devfs_ruleset = (int16_t)int_val;
 		} else if (strcmp(key, "ipv4") == 0) {
 			__block size_t i = 0;
 			ucl_iterate(cur, false, ^(ucl_object_t *val) {

@@ -57,15 +57,18 @@ static bool verbose = false;
 void start_jail() {
 	freopen(redir_stdout, "w", stdout);
 	freopen(redir_stderr, "w", stderr);
-	struct jailparam params[6];
+	struct jailparam params[7];
 	uint32_t params_cnt = 0;
 
 	sb_jailparam_put("path", jail_path);
 
 	char *securelevel_string; asprintf(&securelevel_string, "%d", jail_conf->securelevel);
-
 	sb_jailparam_put("securelevel", securelevel_string);
 	free(securelevel_string);
+
+	char *devfs_ruleset_string; asprintf(&devfs_ruleset_string, "%d", jail_conf->devfs_ruleset);
+	sb_jailparam_put("devfs_ruleset", devfs_ruleset_string);
+	free(devfs_ruleset_string);
 
 	sb_jailparam_put("name", jail_conf->jailname);
 
@@ -132,19 +135,27 @@ char* resolve_mountpoint(const char *pathname) {
 	return result;
 }
 
+void on_failed_mount();
+
 void mount_mounts() {
 	for (size_t i = 0; i < MOUNTS_LEN; i++) {
 		mount_t *mount = jail_conf->mounts[i];
 		if (mount != NULL) {
 			char *mountpoint = resolve_mountpoint(mount->to);
 			mkdirp(mountpoint);
-			mount_nullfs(mountpoint, mount->from, mount->readonly);
+			mount_nullfs(mountpoint, mount->from, mount->readonly, on_failed_mount);
 			free(mountpoint);
 		}
 	}
+	char *mountpoint = resolve_mountpoint("/dev");
+	mount_devfs(mountpoint, jail_conf->devfs_ruleset, on_failed_mount);
+	free(mountpoint);
 }
 
 void unmount_mounts() {
+	char *mountpoint = resolve_mountpoint("/dev");
+	umount(mountpoint);
+	free(mountpoint);
 	for (int32_t i = MOUNTS_LEN - 1; i >= 0; i--) {
 		mount_t *mount = jail_conf->mounts[i];
 		if (mount != NULL) {
@@ -242,6 +253,14 @@ void read_options(int argc, char *argv[]) {
 void start_logging() {
 	openlog(progname, LOG_PID | LOG_PERROR | LOG_CONS, LOG_USER);
 	setlogmask(LOG_UPTO(verbose ? LOG_INFO : LOG_WARNING));
+}
+
+void on_failed_mount() {
+	pdkill(child_pd, SIGTERM);
+	stop_jail();
+	unmount_mounts();
+	rmdir(jail_path);
+	die("Could not mount");
 }
 
 void ensure_root() {
