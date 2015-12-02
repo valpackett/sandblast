@@ -18,7 +18,29 @@ For now, `git clone`, `make` and `sudo make install`.
 
 ## Usage
 
-TODO
+Sandblast runs configuration files parsed by libucl, which allows both a human-friendly (nginx-style) configuration language and JSON.
+
+Here's an example:
+
+```conf
+ipv4 = ["192.168.122.67", "128.4.4.4"]; # one address or array of addresses
+ipv6 = 2001:dbca::2; # one address or array of addresses
+net_iface = vtnet0;
+hostname = myjail;
+# jailname = myjail; # default: same as hostname
+# securelevel = 3; # default: 3
+# devfs_ruleset = 4; # default: 4
+resources { # rctl deny
+	pcpu = 50;
+}
+mount = [ # nullfs/unionfs
+	{ from = /usr/jails/base/10.2-RELEASE, to = /, readonly = true },
+	{ from = /tmp/myjail-storage, to = / },
+	{ from = /usr/local, to = /usr/local, readonly = true },
+	{ from = /home/user, to = /home/user }
+]
+script = "#!/bin/sh\nTERM=screen-256color exec sh";
+```
 
 ## Security
 
