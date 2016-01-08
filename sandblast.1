@@ -1,4 +1,4 @@
-.Dd 2015
+.Dd $Mdocdate$
 .Dt SANDBLAST 1
 .Os 
 .Sh NAME
@@ -25,18 +25,43 @@ The file to redirect the spawned process's stderr to.
 .It Fl v
 Enable verbose logging
 .It Ar config-file
-The JSON file that describes the desired sandbox environment.
+The config file that describes the desired sandbox environment.
+It is parsed using
+.Xr libucl 3
+so you can use JSON or an nginx-style format.
 .El
-.Sh JSON CONFIG FILE STRUCTURE
+.Sh CONFIG FILE STRUCTURE
 .Bl -tag -width indent
-.It Em ipv4 No :: Sy string
-The IPv4 address for the jail.
+.It Em ipv4 No :: Sy string or list of strings
+The IPv4 address(es) for the jail.
+.It Em ipv6 No :: Sy string or list of strings
+The IPv6 address(es) for the jail.
+.It Em net_iface No :: Sy string
+The network interface that will use the jail's IP addresses as aliases.
 .It Em hostname No :: Sy string
 The jail hostname.
 .It Em jailname No :: Sy string
 The jailname.
-Optional, will be based on the hostname (with some character replacements) by default.
-.It Em process No :: Sy string
+By default, will be based on the hostname (with some character replacements).
+.It Em securelevel No :: Sy number
+Securelevel (see
+.Xr security 7 ) for the jail.
+By default, it is 3.
+.It Em devfs_ruleset No :: Sy number
+.Xr devfs 8
+ruleset number for the jail.
+By default, it is 4, which is the default jail ruleset in /etc/defaults/devfs.rules.
+.It Em resources No :: Sy dictionary
+Optional
+.Xr rctl 8
+resource limits for the jail.
+.It Em mount No :: Sy list of dictionaries with { from, to, readonly }
+List of directories to be mounted with
+.Xr nullfs 5
+and
+.Xr unionfs 5
+into the jail root.
+.It Em script No :: Sy string
 The source of the script that will be executed inside of the jail.
 Usually begins with #!/bin/sh -- but you can use any interpreter that's available inside of the jail.
 .El

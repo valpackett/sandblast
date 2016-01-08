@@ -1,16 +1,23 @@
 # Sandblast [![ISC License](https://img.shields.io/badge/license-ISC-red.svg?style=flat)](https://tldrlegal.com/license/-isc-license)
 
-Sandblast is the missing simple container tool for [FreeBSD].
+Sandblast is a sandbox/container tool for [FreeBSD].
+
+Like `jail(8)`, but:
+
+- no persistent/system-wide config files like `jail.conf`
+- just pass JSON (or nginx-style) configuration for ONE jail as a file or to stdin
+- it will manage nullfs/unionfs mounts and RCTL resource limits
+- (manage, as in, both set and clean up)
 
 [FreeBSD]: https://www.FreeBSD.org
 
 ## Dependencies
 
-- FreeBSD, obviously -- currently tested on 10.2
+- FreeBSD, obviously -- at least 10.x
 - `pkg install pkgconf libucl`
 - *For CPU and memory limiting*
   - *10.2 and newer*: add `kern.racct.enable=1` to `/boot/loader.conf` and reboot
-  - *10.1 and older*: [rebuild the kernel](https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/kernelconfig-building.html) with [RCTL/RACCT](https://wiki.freebsd.org/Hierarchical_Resource_Limits) (and reboot, obviously)
+  - *10.1 and older*: [rebuild the kernel](https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/kernelconfig-building.html) with [RCTL/RACCT](https://wiki.freebsd.org/Hierarchical_Resource_Limits) (and reboot)
 
 ## Installation
 
@@ -33,7 +40,7 @@ hostname = myjail;
 resources { # rctl deny
 	pcpu = 50;
 }
-mount = [ # nullfs/unionfs
+mount = [ # nullfs/unionfs (automatically uses unionfs when "to" is the same)
 	{ from = /usr/jails/base/10.2-RELEASE, to = /, readonly = true },
 	{ from = /tmp/myjail-storage, to = / },
 	{ from = /usr/local, to = /usr/local, readonly = true },
@@ -45,14 +52,14 @@ script = "#!/bin/sh\nTERM=screen-256color exec sh";
 ## Security
 
 *This code has not been audited yet!*
-You might want to wait some time before you start building your Heroku killer on top of it.
-Please do test it on your desktops though :-)
+
+Configuration parsing (libucl) is sandboxed using Capsicum.
 
 ### Trust
 
 - The jail configuration files **are trusted**.
   When building PaaS/CI/hosting/etc. services, you need to make sure *your software* generates valid configuration that doesn't eat your system.
-- The `process` field of the configuration **is untrusted** -- it's executed inside of the jail.
+- Except for the `script` field, which **is untrusted** -- it's executed inside of the jail.
 
 ### setuid
 
@@ -62,9 +69,7 @@ You *can* run sandblast as a non-root user if you set the setuid bit on the `san
 $ sudo chmod 4755 /usr/local/bin/sandblast
 ```
 
-Think carefully before you make any binaries setuid though.
-
 ## Copyright
 
-Copyright (c) 2014-2015 Greg V <greg@unrelenting.technology>  
+Copyright (c) 2014-2016 Greg V <greg@unrelenting.technology>  
 Available under the ISC license, see the `COPYING` file

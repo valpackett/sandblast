@@ -1,4 +1,6 @@
 /sandblast
+/sandblast.debug
+/sandblast.full
 *.core
 *.1.gz
 *.o
