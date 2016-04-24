@@ -1,3 +1,5 @@
+*This was a good learning experiment, but `jail(8)` is actually fine.*
+
 # Sandblast [![ISC License](https://img.shields.io/badge/license-ISC-red.svg?style=flat)](https://tldrlegal.com/license/-isc-license)
 
 Sandblast is a sandbox/container tool for [FreeBSD].
